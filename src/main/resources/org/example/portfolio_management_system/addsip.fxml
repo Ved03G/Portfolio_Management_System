@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import de.jensd.fx.glyphs.fontawesome.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+
+<VBox alignment="TOP_LEFT" prefHeight="515.0" prefWidth="565.0" spacing="10" stylesheets="@addsip.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.SIPController">
+    <children>
+        <Button mnemonicParsing="false" onAction="#backtosipManagement" prefHeight="23.0" prefWidth="33.0" style="-fx-background-color: white;">
+            <VBox.margin>
+                <Insets left="10.0" top="10.0" />
+            </VBox.margin>
+            <graphic>
+                <FontAwesomeIconView glyphName="ARROW_LEFT" size="20" wrappingWidth="28.685677528381348">
+                    <fill>
+                        <LinearGradient endX="1.0" endY="1.0">
+                            <stops>
+                                <Stop>
+                                    <color>
+                                        <Color />
+                                    </color>
+                                </Stop>
+                                <Stop offset="0.006729475100942127">
+                                    <color>
+                                        <Color />
+                                    </color>
+                                </Stop>
+                                <Stop offset="1.0">
+                                    <color>
+                                        <Color red="1.0" green="1.0" blue="1.0" />
+                                    </color>
+                                </Stop>
+                            </stops>
+                        </LinearGradient>
+                    </fill>
+                </FontAwesomeIconView>
+            </graphic>
+        </Button>
+        <HBox spacing="10">
+            <Label text="Search Mutual Fund:">
+                <HBox.margin>
+                    <Insets top="15.0" />
+                </HBox.margin></Label>
+            <TextField fx:id="fundSearchField" prefWidth="200" promptText="Type to search mutual fund...">
+                <HBox.margin>
+                    <Insets top="10.0" />
+                </HBox.margin></TextField>
+        </HBox>
+        <HBox prefHeight="210.0" prefWidth="383.0">
+            <children>
+                <ListView fx:id="fundListView" prefHeight="150" prefWidth="390.0" visible="false" />
+            </children>
+            <VBox.margin>
+                <Insets right="20.0" />
+            </VBox.margin>
+        </HBox>
+
+        <!-- Other fields for SIP investment -->
+        <HBox>
+            <Label text="SIP Amount:" />
+            <TextField fx:id="sipAmountField" prefHeight="26.0" prefWidth="208.0">
+                <HBox.margin>
+                    <Insets left="10.0" />
+                </HBox.margin></TextField>
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+        </HBox>
+        <HBox>
+            <Label text="Frequency :" />
+            <ChoiceBox fx:id="frequencyChoiceBox" prefHeight="26.0" prefWidth="207.0">
+                <HBox.margin>
+                    <Insets left="15.0" />
+                </HBox.margin></ChoiceBox>
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+        </HBox>
+        <HBox>
+            <Label text="Start Date:" />
+            <DatePicker fx:id="startDatePicker" prefHeight="26.0" prefWidth="209.0">
+                <HBox.margin>
+                    <Insets left="18.0" />
+                </HBox.margin></DatePicker>
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+        </HBox>
+        <HBox>
+            <Label text="End Date:" />
+            <DatePicker fx:id="endDatePicker" prefHeight="26.0" prefWidth="214.0">
+                <HBox.margin>
+                    <Insets left="20.0" />
+                </HBox.margin></DatePicker>
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+        </HBox>
+        <HBox>
+            <Label text="NAV:" />
+            <Label fx:id="navLabel" />
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+        </HBox>
+        <HBox>
+            <Label text="Total Units:" />
+            <Label fx:id="totalUnitsLabel" />
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+        </HBox>
+          <Button onAction="#handleSIPInvestment" prefHeight="36.0" prefWidth="118.0" styleClass="button1" text="Invest" />
+        <HBox prefHeight="36.0" prefWidth="381.0">
+            <VBox.margin>
+                <Insets />
+            </VBox.margin>
+        </HBox>
+    </children>
+    <padding>
+        <Insets left="100.0" />
+    </padding>
+</VBox>

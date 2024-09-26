@@ -1,0 +1,111 @@
+.container {
+    -fx-background-color: #FFFFFFFF;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(one-pass-box, #171a1f, 2, 0, 0, 0);
+}
+.container22 {
+    -fx-background-color: #020006;
+    -fx-border-radius: 0px;
+    -fx-effect: dropshadow(gaussian, #171a1f, 2, 0, 0, 0);
+    -fx-pref-width: 300px;
+    -fx-pref-height: 700px;
+    -fx-layout-x: 0px;
+    -fx-layout-y: 0px;
+}
+.bt1 {
+    -fx-background-color: #223525;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-border-color: #223525;
+    -fx-border-style: solid;
+    -fx-effect: dropshadow(gaussian, #171a1f, 2, 0, 0, 0);
+    -fx-pref-width: 250px;
+    -fx-pref-height: 46px;
+}
+
+.button1 {
+    -fx-background-color: #020007FF;
+    -fx-text-fill: #FFFFFFFF;
+    -fx-font-family: 'Manrope';
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-border-radius: 4px;
+    -fx-pref-width: 413px;
+    -fx-pref-height: 47px;
+    -fx-opacity: 1;
+    -fx-padding: 0 16px;
+}
+.text {
+    -fx-font-family: 'Lexend'; /* Heading font */
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+    -fx-line-height: 42px;
+    -fx-text-fill: #1E1A28FF;
+}
+.text2 {
+    -fx-font-family: 'Manrope'; /* Body font */
+    -fx-font-size: 12px;
+    -fx-font-weight: 400;
+    -fx-line-height: 20px;
+    -fx-text-fill: #67945CFF;
+}
+
+.button1:hover {
+    -fx-background-color: #020007FF;
+    -fx-text-fill: #FFFFFFFF;
+}
+
+.button1:disabled {
+    -fx-opacity: 0.4;
+}
+.button3 {
+    -fx-background-color: transparent;
+    -fx-text-fill: #547551; /* Set text color */
+    /* Use any preferred font */
+    -fx-font-size: 12px;
+    -fx-font-style: bold;/* Adjust font size */
+    -fx-border-color: transparent; /* Adjust padding as needed */
+}
+.button3:hover {
+    -fx-background-color: #DDFAD5;
+}
+.textbox {
+    -fx-opacity: 1;
+}
+
+.textbox input {
+    -fx-padding: 0 16px;
+    -fx-font-family: 'Manrope';
+    -fx-font-size: 12px;
+    -fx-font-weight: 400;
+    -fx-background-color: #FFFFFFFF;
+    -fx-border-radius: 2px;
+    -fx-border-width: 1px;
+    -fx-border-color: #B2B2B2FF;
+}
+
+.textbox input:hover {
+    -fx-background-color: #FFFFFFFF;
+    -fx-border-color: #B2B2B2FF;
+}
+
+.textbox input:focused {
+    -fx-border-color: #B2B2B2FF;
+}
+
+.textbox input:disabled {
+    -fx-opacity: 0.4;
+    -fx-border-color: #B2B2B2FF;
+}
+.text-area3 {
+    -fx-border-color: transparent;   /* Remove border */
+    -fx-font-size: 16px;             /* Increase font size */
+    -fx-text-fill: green;            /* Set text color to green */
+    -fx-background-radius: 0;        /* Remove background border radius */
+    -fx-background-color: transparent;}
+.table-view .column-header .label {
+    -fx-padding: 10px 0 10px 0;
+    -fx-font-weight: bold;
+    -fx-background-color:  #E6F7DC;
+}

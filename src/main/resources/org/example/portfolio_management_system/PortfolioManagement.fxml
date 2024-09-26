@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane maxHeight="700.0" maxWidth="1100.0" minHeight="700.0" minWidth="1100.0" prefHeight="700.0" prefWidth="1100.0" style="-fx-background-color: #F6F6F6;" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.PortfolioManagementController">
+   <children>
+      <Pane prefHeight="200.0" prefWidth="200.0" styleClass="container22" stylesheets="@style.css">
+         <children>
+            <Label layoutX="73.0" layoutY="99.0" style="-fx-text-fill: ffff; -fx-font-size: 30;" styleClass="text" text="Dashboard" />
+            <Button layoutX="25.0" layoutY="162.0" mnemonicParsing="false" onAction="#handlePortfolioButtonClick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Button>
+            <ImageView fitHeight="89.0" fitWidth="250.0" layoutX="25.0">
+               <image>
+                  <Image url="@icons/InvestMate (8).png" />
+               </image>
+            </ImageView>
+            <Button layoutX="25.0" layoutY="302.0" mnemonicParsing="false" onAction="#handlesipclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Button>
+            <Button layoutX="25.0" layoutY="232.0" mnemonicParsing="false" onAction="#handlemutualfundclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Button>
+            <Button layoutX="25.0" layoutY="372.0" mnemonicParsing="false" onAction="#handlereportsclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Button>
+            <Button layoutX="25.0" layoutY="442.0" mnemonicParsing="false" onAction="#handletransactionclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Button>
+            <Button layoutX="25.0" layoutY="512.0" mnemonicParsing="false" onAction="#handleprofileclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Button>
+            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="169.0">
+               <image>
+                  <Image url="@icons/pie-chart.png" />
+               </image>
+            </ImageView>
+            <Text fill="#a3c87f" layoutX="73.0" layoutY="192.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Portfolio Overview">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+            </Text>
+            <Text fill="#a3c87f" layoutX="97.0" layoutY="262.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Mutual Funds">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+            </Text>
+            <Text fill="#a3c87f" layoutX="81.0" layoutY="332.0" strokeType="OUTSIDE" strokeWidth="0.0" text="SIP Management">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+            </Text>
+            <Text fill="#a3c87f" layoutX="71.0" layoutY="402.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Reports &amp; Analytics">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+            </Text>
+            <Text fill="#a3c87f" layoutX="69.0" layoutY="472.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Transaction History">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+            </Text>
+            <Text fill="#a3c87f" layoutX="107.0" layoutY="542.0" strokeType="OUTSIDE" strokeWidth="0.0" text="User Profile">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+            </Text>
+            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="239.0">
+               <image>
+                  <Image url="@icons/fund.png" />
+               </image>
+            </ImageView>
+            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="309.0">
+               <image>
+                  <Image url="@icons/insurance.png" />
+               </image>
+            </ImageView>
+            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="379.0">
+               <image>
+                  <Image url="@icons/report.png" />
+               </image>
+            </ImageView>
+            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="449.0">
+               <image>
+                  <Image url="@icons/bill.png" />
+               </image>
+            </ImageView>
+            <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="37.0" layoutY="519.0">
+               <image>
+                  <Image url="@icons/user.png" />
+               </image>
+            </ImageView>
+            <Line endX="132.0" layoutX="150.0" layoutY="220.0" startX="-131.1999969482422" stroke="#363446" />
+            <Line endX="132.0" layoutX="149.0" layoutY="572.0" startX="-131.1999969482422" stroke="#363446" />
+            <Line endX="132.0" layoutX="150.0" layoutY="500.0" startX="-131.1999969482422" stroke="#363446" />
+            <Line endX="132.0" layoutX="150.0" layoutY="430.0" startX="-131.1999969482422" stroke="#363446" />
+            <Line endX="132.0" layoutX="149.0" layoutY="360.0" startX="-131.1999969482422" stroke="#363446" />
+            <Line endX="132.0" layoutX="150.0" layoutY="289.0" startX="-131.1999969482422" stroke="#363446" />
+            <Line endX="132.0" layoutX="150.0" layoutY="152.0" startX="-131.1999969482422" stroke="#363446" />
+         </children>
+      </Pane>
+      <Pane layoutX="300.0" prefHeight="60.0" prefWidth="800.0" style="-fx-background-color: #FFFFFF;">
+         <children>
+            <Text fill="#5a7254" layoutX="311.0" layoutY="38.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Portfolio Overview">
+               <font>
+                  <Font name="System Bold" size="20.0" />
+               </font>
+            </Text>
+            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="277.0" layoutY="15.0">
+               <image>
+                  <Image url="@icons/pie-chart.png" />
+               </image>
+            </ImageView>
+         </children>
+      </Pane>
+      <Pane layoutX="320.0" layoutY="122.0" prefHeight="175.0" prefWidth="460.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 8px;">
+         <children>
+            <Text layoutX="254.0" layoutY="84.0" strokeType="OUTSIDE" strokeWidth="0.0" text="CURRENT VALUE" />
+            <TextArea fx:id="currentValueTextArea" layoutX="254.0" layoutY="104.0" prefHeight="37.0" prefWidth="151.0" style="-fx-background-color: transparent;" styleClass="text-area3" stylesheets="@style.css" />
+            <Text layoutX="14.0" layoutY="81.0" strokeType="OUTSIDE" strokeWidth="0.0" text="AMOUNT INVESTED" />
+            <TextArea fx:id="amountInvestedTextArea" layoutX="14.0" layoutY="103.0" prefHeight="37.0" prefWidth="151.0" style="-fx-background-color: transparent;" styleClass="text-area3" stylesheets="@style.css" />
+            <Label layoutX="11.0" layoutY="16.0" prefHeight="30.0" prefWidth="77.0" style="-fx-background-color: #3D3B50; -fx-text-fill: #FFFFFF; -fx-font-size: 18px; -fx-background-radius: 6px;" text=" Portfolio" textFill="WHITE" />
+            <ImageView fitHeight="60.0" fitWidth="77.0" layoutX="384.0" layoutY="1.0" nodeOrientation="RIGHT_TO_LEFT">
+               <image>
+                  <Image url="@icons/investment.png" />
+               </image>
+            </ImageView>
+         </children>
+      </Pane>
+      <Label layoutX="320.0" layoutY="74.0" prefHeight="38.0" prefWidth="83.0" style="-fx-background-color: #13121B; -fx-text-fill: #FFFFFF; -fx-font-size: 22px; -fx-background-radius: 8px;" text="  Today" textFill="WHITE" />
+      <Pane layoutX="834.0" layoutY="122.0" prefHeight="175.0" prefWidth="205.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 8PX;">
+         <children>
+            <Label fx:id="totalGainLabel" layoutX="43.0" layoutY="44.0" prefHeight="40.0" prefWidth="116.0" style="-fx-background-color: #E6F7DC;" text="        " />
+            <Label fx:id="unrealizedGainLabel" layoutX="43.0" layoutY="118.0" prefHeight="40.0" prefWidth="116.0" style="-fx-background-color: #E6F7DC;" text="       " />
+            <Text layoutX="14.0" layoutY="33.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Total Gain">
+               <font>
+                  <Font name="System Bold" size="16.0" />
+               </font>
+            </Text>
+            <Line endX="49.5999755859375" layoutX="143.0" layoutY="100.0" startX="-131.1999969482422" stroke="#e0e0e0" />
+            <ImageView fitHeight="21.0" fitWidth="23.0" layoutX="44.0" layoutY="126.0">
+               <image>
+                  <Image url="@icons/rupee-indian.png" />
+               </image>
+            </ImageView>
+         </children>
+      </Pane>
+      <Label layoutX="320.0" layoutY="311.0" prefHeight="38.0" prefWidth="169.0" style="-fx-background-color: #13121B; -fx-text-fill: #FFFFFF; -fx-font-size: 22px; -fx-background-radius: 8px;" text=" Overall Holdings" textFill="WHITE" />
+      <TableView fx:id="investmentTable" layoutX="320.0" layoutY="363.0" prefHeight="303.0" prefWidth="766.0" style="-fx-font-size: 17;" stylesheets="@style.css">
+         <columns>
+            <TableColumn fx:id="schemeCodeColumn" prefWidth="127.20001220703125" text="Scheme Code">
+               <cellValueFactory>
+                  <PropertyValueFactory property="schemeCode" />
+               </cellValueFactory>
+            </TableColumn>
+            <TableColumn fx:id="schemeNameColumn" prefWidth="155.199951171875" text="Scheme Name">
+               <cellValueFactory>
+                  <PropertyValueFactory property="schemeName" />
+               </cellValueFactory>
+            </TableColumn>
+            <TableColumn fx:id="amountInvestedColumn" prefWidth="150" text="Amount Invested">
+               <cellValueFactory>
+                  <PropertyValueFactory property="amountInvested" />
+               </cellValueFactory>
+            </TableColumn>
+            <TableColumn fx:id="typeColumn" prefWidth="150" text="Type">
+               <cellValueFactory>
+                  <PropertyValueFactory property="type" />
+               </cellValueFactory>
+            </TableColumn>
+            <TableColumn fx:id="currentValueColumn" prefWidth="150" text="Current Value">
+               <cellValueFactory>
+                  <PropertyValueFactory property="currentValue" />
+               </cellValueFactory>
+            </TableColumn>
+            <TableColumn fx:id="unitsColumn" prefWidth="100" text="Units">
+               <cellValueFactory>
+                  <PropertyValueFactory property="units" />
+               </cellValueFactory>
+            </TableColumn>
+         </columns>
+      </TableView>
+   </children>
+</AnchorPane>
