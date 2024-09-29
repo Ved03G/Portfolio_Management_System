@@ -16,6 +16,7 @@ module org.example.portfolio_management_system {
     requires java.net.http;
     requires com.google.gson;
     requires de.jensd.fx.glyphs.fontawesome;
+    requires org.json;
 
     opens org.example.portfolio_management_system to javafx.fxml;
     exports org.example.portfolio_management_system;

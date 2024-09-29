@@ -15,6 +15,7 @@ public class SipData {
     private final double nav;
     private final int sip_id;
 
+
     public SipData(int sip_id,String sipName, String frequency, LocalDate startDate, LocalDate endDate, double investedAmount, double totalUnits, double currentAmount, double returns, double nav) {
         this.sipName = sipName;
         this.sip_id = sip_id;
@@ -64,6 +65,7 @@ public class SipData {
         Period period = Period.between(startDate, endDate);
         return String.format("%d years, %d months, %d days", period.getYears(), period.getMonths(), period.getDays());
     }
+
     public double getNav() {
         return nav;
     }

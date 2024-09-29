@@ -11,10 +11,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 
 public class SipDataCellController {
@@ -107,6 +104,7 @@ public class SipDataCellController {
                 // Store transaction and update database
                 deleteFundFromDatabase(amountInvested, remainingUnits, sipData.getSip_id());
                 storeSaleTransaction(amountInvested, unitsToSell, sipData.getSipName());
+              //  updatePortfolio(getCurrentUserId(),sipData.getFundId(),sipData.getSipName(),remainingUnits);
 
                 // Success alert
                 showAlert("Success", "Success", "You have successfully sold " + unitsToSell +
@@ -122,6 +120,9 @@ public class SipDataCellController {
                 throw new RuntimeException(e);
             }
         });
+    }
+    private int getCurrentUserId() {
+        return UserSession.getInstance().getUserId();
     }
 
     private void storeSaleTransaction(double saleAmount, double unitsSold, String fundName) throws SQLException {
@@ -186,4 +187,68 @@ public class SipDataCellController {
             throw new RuntimeException(e);
         }
     }
+    public void updatePortfolio(int userId, String fund_id, String fundname, double totalUnits) {
+        try {
+            Connection connection = DatabaseConnection.getConnection();
+
+            // Get the total invested amount and current value for this user from mutual_funds
+            String sumQuery = "SELECT SUM(amount_invested) AS totalAmountInvested, SUM(current_value) AS totalCurrentValue " +
+                    "FROM mutual_funds WHERE user_id = ?";
+            PreparedStatement ps = connection.prepareStatement(sumQuery);
+            ps.setInt(1, userId);
+            ResultSet resultSet = ps.executeQuery();
+
+            if (resultSet.next()) {
+                double totalAmountInvested = resultSet.getDouble("totalAmountInvested");
+                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
+
+                // Check if a portfolio entry for this user and fund already exists
+                String checkQuery = "SELECT * FROM portfolio WHERE user_id = ? AND scheme_code = ?";
+                PreparedStatement checkPs = connection.prepareStatement(checkQuery);
+                checkPs.setInt(1, userId);
+                checkPs.setString(2, fund_id);
+                ResultSet checkResultSet = checkPs.executeQuery();
+
+                if (checkResultSet.next()) {
+                    // If entry exists, update the existing portfolio record
+                    String updateQuery = "UPDATE portfolio SET amount_invested = ?, current_value = ?, units = ?, fund_name = ? " +
+                            "WHERE user_id = ? AND scheme_code = ?";
+                    PreparedStatement updatePs = connection.prepareStatement(updateQuery);
+                    updatePs.setDouble(1, totalAmountInvested);
+                    updatePs.setDouble(2, totalCurrentValue);
+                    updatePs.setDouble(3, totalUnits);
+                    updatePs.setString(4, fundname);
+                    updatePs.setInt(5, userId);
+                    updatePs.setString(6, fund_id);
+                    updatePs.executeUpdate();
+                    updatePs.close();
+                } else {
+                    // If no entry exists, you might want to insert a new record (optional)
+                    String insertQuery = "INSERT INTO portfolio (user_id, amount_invested, current_value, type, scheme_code, fund_name, units) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    PreparedStatement insertPs = connection.prepareStatement(insertQuery);
+                    insertPs.setInt(1, userId);
+                    insertPs.setDouble(2, totalAmountInvested);
+                    insertPs.setDouble(3, totalCurrentValue);
+                    insertPs.setString(4, "SIP");
+                    insertPs.setString(5, fund_id);
+                    insertPs.setString(6, fundname);
+                    insertPs.setDouble(7, totalUnits);
+                    insertPs.executeUpdate();
+                    insertPs.close();
+                }
+
+                checkResultSet.close();
+                checkPs.close();
+            }
+
+            resultSet.close();
+            ps.close();
+            connection.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

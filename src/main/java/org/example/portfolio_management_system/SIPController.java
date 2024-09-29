@@ -175,7 +175,7 @@ public class SIPController {
 
             // Store SIP details and transactions with the current user's ID
             storeSIPDetails(userId, selectedFund, sipAmount, totalUnits, startDate, endDate, frequency, schemeName);
-            storeTransactionData(userId, sipAmount, totalUnits, schemeName);
+            storeTransactionData(selectedFund ,userId, sipAmount, totalUnits, schemeName);
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid SIP amount entered.");
@@ -295,7 +295,7 @@ public class SIPController {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
             int userid = getCurrentUserId();
-            updatePortfolio(userid,fund.getsipid(),fund_Name,totalUnits);
+            updatePortfolio(userid,sipAmount,fund.getsipid(),fund_Name,totalUnits);
 
             // Set values for the SQL statement
             stmt.setInt(1, userId);
@@ -326,13 +326,12 @@ public class SIPController {
         }
     }
 
-    private void storeTransactionData(int userId ,double sipAmount, double totalUnits, String schemename) {
+    private void storeTransactionData(MutualFund fund ,int userId ,double sipAmount, double totalUnits, String schemename) {
 
         String insertSQL = "INSERT INTO transactions (user_id,Amount, units, type1, transaction_date, fund_name, fund_type) VALUES (?,?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
-
             // Set values for the SQL statement
             stmt.setInt(1, userId);
             stmt.setDouble(2, sipAmount);
@@ -361,30 +360,57 @@ public class SIPController {
     private int getCurrentUserId() {
         return UserSession.getInstance().getUserId();
     }
-    public void updatePortfolio(int userId,String fund_id,String fundname,double totalUnits) {
+    public void updatePortfolio(int userId, double amountInvested, String fundId, String fundName, double totalUnits) {
         try {
+            // Get the connection
             Connection connection = DatabaseConnection.getConnection();
-            String sumQuery = "SELECT SUM(amount_invested) AS totalAmountInvested, SUM(current_value) AS totalCurrentValue " +
-                    "FROM mutual_funds WHERE user_id = ?";
-            PreparedStatement ps = connection.prepareStatement(sumQuery);
-            ps.setInt(1, userId);
+
+            double currentValue = amountInvested;
+
+            // Insert into portfolio table
+            String insertQuery = "INSERT INTO portfolio (user_id, amount_invested, current_value, type, scheme_code, fund_name, units) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+            PreparedStatement insertPs = connection.prepareStatement(insertQuery);
+            insertPs.setInt(1, userId);               // Set user ID
+            insertPs.setDouble(2, amountInvested);    // Set amount invested
+            insertPs.setDouble(3, currentValue);      // Set calculated current value
+            insertPs.setString(4, "SIP");             // Set type (assuming this is always "SIP")
+            insertPs.setString(5, fundId);            // Set scheme code (fund_id)
+            insertPs.setString(6, fundName);          // Set fund name
+            insertPs.setDouble(7, totalUnits);        // Set total units
+
+            // Execute the insert query
+            insertPs.executeUpdate();
+
+            // Close the resources
+            insertPs.close();
+            connection.close();
+
+            System.out.println("Portfolio updated successfully for user: " + userId + ", fund: " + fundName);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    public double calculateCurrentValue(String fund_id, double units) {
+        double currentNAV = getCurrentNAV(fund_id);  // Fetch current NAV for the fund
+        return currentNAV * units;  // Calculate current value
+    }
+    // Method to fetch the current NAV of a mutual fund
+    public double getCurrentNAV(String fund_id) {
+        double currentNAV = 0.0;
+
+        try {
+            // Example: Fetch NAV from the database
+            Connection connection = DatabaseConnection.getConnection();
+            String query = "SELECT nav FROM mutual_funds WHERE scheme_code = ?";  // Adjust based on your database schema
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, fund_id);
+
             ResultSet resultSet = ps.executeQuery();
-
             if (resultSet.next()) {
-                double totalAmountInvested = resultSet.getDouble("totalAmountInvested");
-                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
-
-                String insertQuery = "INSERT INTO portfolio (user_id, amount_invested, current_value,type,scheme_code,fund_name,units) VALUES (?, ?, ?,?,?,?,?)";
-                PreparedStatement insertPs = connection.prepareStatement(insertQuery);
-                insertPs.setInt(1, userId);
-                insertPs.setDouble(2, totalAmountInvested);
-                insertPs.setDouble(3, totalCurrentValue);
-                insertPs.setString(4, "SIP");
-                insertPs.setString(5, fund_id);
-                insertPs.setString(6, fundname);
-                insertPs.setDouble(7, totalUnits);
-                insertPs.executeUpdate();
-                insertPs.close();
+                currentNAV = resultSet.getDouble("nav");  // Assuming nav column has the current NAV
             }
 
             resultSet.close();
@@ -394,6 +420,8 @@ public class SIPController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        return currentNAV;
     }
 
 }

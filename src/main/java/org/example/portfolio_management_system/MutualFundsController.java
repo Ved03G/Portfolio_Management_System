@@ -299,8 +299,8 @@ public class MutualFundsController {
             Connection connection = DatabaseConnection.getConnection();
 
             // Query to get the sum of amount_invested and current_value
-            String sumQuery = "SELECT SUM(amount_invested) AS totalAmountInvested, SUM(current_value) AS totalCurrentValue " +
-                    "FROM mutual_funds WHERE user_id = ?";
+            String sumQuery = "SELECT amount_invested, current_value " +
+                    "FROM mutual_funds WHERE user_id = ? order by fund_id desc limit 1";
 
             PreparedStatement ps = connection.prepareStatement(sumQuery);
             ps.setInt(1, userId);
@@ -310,12 +310,9 @@ public class MutualFundsController {
 
             if (resultSet.next()) {
                 // Retrieve the total amount invested and current value from the result set
-                double totalAmountInvested = resultSet.getDouble("totalAmountInvested");
-                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
+                double totalAmountInvested = resultSet.getDouble("amount_invested");
+                double totalCurrentValue = resultSet.getDouble("current_value");
 
-                // Debug: Print to console to verify the values
-                System.out.println("Total Amount Invested: " + totalAmountInvested);
-                System.out.println("Total Current Value: " + totalCurrentValue);
 
                 // Ensure that values are non-zero before updating
                 if (totalAmountInvested > 0 && totalCurrentValue > 0) {
@@ -352,6 +349,89 @@ public class MutualFundsController {
             e.printStackTrace();
         }
     }
+    public void updatePortfolio1(int userId, String fundName, Double remainingUnits, double remainingAmountInvested) {
+        try {
+            Connection connection = DatabaseConnection.getConnection();
+
+            // Get the scheme code based on the fund_name
+            String getSchemeCodeQuery = "SELECT scheme_code FROM mutual_funds WHERE fund_name = ?";
+            PreparedStatement schemeCodePs = connection.prepareStatement(getSchemeCodeQuery);
+            schemeCodePs.setString(1, fundName);
+            ResultSet schemeCodeResultSet = schemeCodePs.executeQuery();
+
+            String fundId = null;
+            if (schemeCodeResultSet.next()) {
+                fundId = schemeCodeResultSet.getString("scheme_code");
+            }
+
+            // Calculate the new current value based on the remaining units
+            double newCurrentValue = calculateCurrentValue(fundId, remainingUnits);
+
+            // If remaining units are greater than 0, update the portfolio
+            if (remainingUnits > 0) {
+                String updateQuery = "UPDATE portfolio SET amount_invested = ?, current_value = ?, units = ? WHERE user_id = ? AND fund_name = ?";
+                PreparedStatement updatePs = connection.prepareStatement(updateQuery);
+
+                updatePs.setDouble(1, remainingAmountInvested);
+                updatePs.setDouble(2, newCurrentValue);
+                updatePs.setDouble(3, remainingUnits);
+                updatePs.setInt(4, userId);
+                updatePs.setString(5, fundName);
+
+                updatePs.executeUpdate();
+                updatePs.close();
+            } else {
+                // If units become zero, you can either delete the portfolio entry or update it with zero values
+                String deleteQuery = "DELETE FROM portfolio WHERE user_id = ? AND fund_name = ?";
+                PreparedStatement deletePs = connection.prepareStatement(deleteQuery);
+                deletePs.setInt(1, userId);
+                deletePs.setString(2, fundName);
+
+                deletePs.executeUpdate();
+                deletePs.close();
+            }
+
+            schemeCodeResultSet.close();
+            schemeCodePs.close();
+            connection.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Method to calculate the current value based on NAV and units
+    public double calculateCurrentValue(String fund_id, double units) {
+        double currentNAV = getCurrentNAV(fund_id);  // Fetch current NAV for the fund
+        return currentNAV * units;  // Calculate current value
+    }
+    // Method to fetch the current NAV of a mutual fund
+    public double getCurrentNAV(String fund_id) {
+        double currentNAV = 0.0;
+
+        try {
+            // Example: Fetch NAV from the database
+            Connection connection = DatabaseConnection.getConnection();
+            String query = "SELECT nav FROM mutual_funds WHERE scheme_code = ?";  // Adjust based on your database schema
+            PreparedStatement ps = connection.prepareStatement(query);
+            ps.setString(1, fund_id);
+
+            ResultSet resultSet = ps.executeQuery();
+            if (resultSet.next()) {
+                currentNAV = resultSet.getDouble("nav");  // Assuming nav column has the current NAV
+            }
+
+            resultSet.close();
+            ps.close();
+            connection.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return currentNAV;
+    }
+
 
     private void saveInvestmentToDatabase(double amountInvested, double units, double currentValue, double costperunit) {
         try {
@@ -361,9 +441,9 @@ public class MutualFundsController {
             String insertQuery = "INSERT INTO mutual_funds (user_id, fund_name, amount_invested, current_value, investment_date, scheme_code, nav, units, costperunit) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement ps = conn.prepareStatement(insertQuery);
-            savetotransactions(amountInvested, units,selectedFund.getSchemeName(),"Buy");
-            // Get the current user ID
             int userId = getCurrentUserId();
+            savetotransactions(amountInvested, units, selectedFund.getSchemeName(), "Buy", userId);
+            // Get the current user ID
             ps.setInt(1, userId);
             ps.setString(2, selectedFund.getSchemeName());
             ps.setDouble(3, amountInvested);
@@ -391,106 +471,130 @@ public class MutualFundsController {
             e.printStackTrace();
         }
     }
-    private void savetotransactions(double AmountInvested, double units, String Name,String type){
-        String insertSQL = "INSERT INTO transactions ( Amount, units, type1, transaction_date, fund_name,fund_type) VALUES ( ?, ?, ?, ?, ?,?)";
+    private void savetotransactions(double amountInvested, double units, String fundName, String type, int userId) {
+        String insertSQL = "INSERT INTO transactions (user_id, Amount, units, type1, transaction_date, fund_name, fund_type) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
 
-
-            stmt.setDouble(1, AmountInvested);
-            stmt.setDouble(2, units);
-            stmt.setString(3, type);
-            stmt.setString(4, String.valueOf(java.sql.Date.valueOf(LocalDate.now())));
-            stmt.setString(5, Name);
-            stmt.setString(6, "Mutual Fund");
+            // Save to transactions table for the specific user
+            stmt.setInt(1, userId);  // Add the user_id to the query
+            stmt.setDouble(2, amountInvested);
+            stmt.setDouble(3, units);
+            stmt.setString(4, type);
+            stmt.setString(5, String.valueOf(java.sql.Date.valueOf(LocalDate.now())));
+            stmt.setString(6, fundName);
+            stmt.setString(7, "Mutual Fund");
 
             stmt.executeUpdate();
-            System.out.println("Mutual data successfully stored in the database.");
+            System.out.println("Mutual fund transaction successfully stored in the database for user ID: " + userId);
 
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("Error storing MF data: " + e.getMessage());
+            System.out.println("Error storing mutual fund transaction: " + e.getMessage());
         }
     }
+
+
 
 
 
     // Method to handle the selling of a fund
     @FXML
     public void handleSellFund(ActionEvent event) throws IOException {
-        MutualFund2 selectedfund = investmentTable.getSelectionModel().getSelectedItem();
+        MutualFund2 selectedFund = investmentTable.getSelectionModel().getSelectedItem();
 
-        if (selectedfund != null) {
-            // Confirm with the user before deleting
+        if (selectedFund != null) {
+            // Confirm with the user before selling
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Sell Fund");
-            dialog.setHeaderText("Sell Fund: " + selectedfund.getSchemeName());
-            dialog.setHeaderText("Total Units Available: " + selectedfund.getUnits());
-            dialog.setContentText("Enter the Units You Want To sell");
+            dialog.setHeaderText("Sell Fund: " + selectedFund.getSchemeName());
+            dialog.setHeaderText("Total Units Available: " + selectedFund.getUnits());
+            dialog.setContentText("Enter the Units You Want To Sell:");
 
-            dialog.showAndWait().ifPresent( unitstr-> {
+            dialog.showAndWait().ifPresent(unitStr -> {
                 try {
-                    double units = Double.parseDouble(unitstr);
-                    double amount=units*selectedfund.getNav();
-                    if (units > selectedfund.getUnits()) {
+                    double unitsToSell = Double.parseDouble(unitStr);
+                    double totalUnitsAvailable = selectedFund.getUnits();
+                    double nav = selectedFund.getNav();
+
+                    if (unitsToSell > totalUnitsAvailable) {
                         Alert alert = new Alert(Alert.AlertType.ERROR);
                         alert.setTitle("Error");
                         alert.setHeaderText("Invalid Input");
-                        alert.setContentText("You Do Not Havr Sufficient Units!");
-                        return;
-                    } else {
-                        double units1 = selectedfund.getUnits() - units;
-                        double nav = selectedfund.getNav();
-                        double amountInvested = units1 * nav;
-                        deleteFundFromDatabase(amountInvested, units1,nav,selectedfund.getSchemeCode());
-                        savetotransactions(amountInvested, units,selectedfund.getSchemeName(),"Sell");
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Success");
-                        alert.setHeaderText("Success");
-                        alert.setContentText("You have successfully Sold  " +units + " for ₹ " +amount + " Remaning Units"+units1 +",remaining Amount" +amountInvested);
+                        alert.setContentText("You do not have sufficient units!");
                         alert.showAndWait();
+                        return;
                     }
-                }catch(NumberFormatException e){
+
+                    // Calculate remaining units and updated amount invested
+                    double remainingUnits = totalUnitsAvailable - unitsToSell;
+                    double remainingAmountInvested = remainingUnits * nav;
+
+                    // Get the current user ID
+                    int userId = getCurrentUserId();
+
+                    // Update portfolio and mutual_funds table
+                    updatePortfolio1(userId, selectedFund.getSchemeName(), remainingUnits, remainingAmountInvested);
+                    deleteFundFromDatabase(remainingAmountInvested, remainingUnits, nav, selectedFund.getSchemeCode(), userId);
+
+                    // Log the transaction as a sell operation
+                    savetotransactions(remainingAmountInvested, remainingUnits, selectedFund.getSchemeName(), "Sell", userId);
+
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Success");
+                    alert.setHeaderText("Success");
+                    alert.setContentText("You have successfully sold " + unitsToSell + " units for ₹ " + (unitsToSell * nav) +
+                            ". Remaining Units: " + remainingUnits + ", Remaining Amount: ₹ " + remainingAmountInvested);
+                    alert.showAndWait();
+
+                } catch (NumberFormatException e) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error");
                     alert.setHeaderText("Invalid Input");
-                    alert.setContentText("Please enter a valid number for the amount.");
+                    alert.setContentText("Please enter a valid number for the units.");
                     alert.showAndWait();
                 }
-
             });
-
-
         }
+
         reloadSMFManagementScreen();
     }
 
 
-    private void deleteFundFromDatabase(double amount, double units,double nav,String schemecode) {
+
+    private void deleteFundFromDatabase(double remainingAmount, double remainingUnits, double nav, String schemeCode, int userId) {
         try {
             Connection connection = DatabaseConnection.getConnection();
-            String deleteQuery = "UPDATE mutual_funds Set units=?,amount_invested=?,current_value=? where scheme_code=?";
-            PreparedStatement ps = connection.prepareStatement(deleteQuery);
 
-            ps.setDouble(1, units);// Set the scheme code of the selected fund
-            ps.setDouble(2, amount);
-            ps.setDouble(3, units*nav);
-            ps.setString(4, schemecode);
-            ps.executeUpdate();  // Execute the deletion
+            // If remaining units are greater than zero, update the record for the specific user
+            if (remainingUnits > 0) {
+                String updateQuery = "UPDATE mutual_funds SET units = ?, amount_invested = ?, current_value = ? WHERE scheme_code = ? AND user_id = ?";
+                PreparedStatement ps = connection.prepareStatement(updateQuery);
 
-            ps.close();
+                ps.setDouble(1, remainingUnits);
+                ps.setDouble(2, remainingAmount);
+                ps.setDouble(3, remainingUnits * nav);  // New current value based on remaining units
+                ps.setString(4, schemeCode);
+                ps.setInt(5, userId);  // Ensure it applies only for this user
+
+                ps.executeUpdate();  // Execute the update
+                ps.close();
+            } else {
+                // If remaining units are zero, delete the record for the specific user
+                String deleteQuery = "DELETE FROM mutual_funds WHERE scheme_code = ? AND user_id = ?";
+                PreparedStatement ps = connection.prepareStatement(deleteQuery);
+
+                ps.setString(1, schemeCode);
+                ps.setInt(2, userId);  // Ensure it deletes only for this user
+
+                ps.executeUpdate();  // Execute the delete
+                ps.close();
+            }
+
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-        String deleteQuery = "DELETE FROM mutual_funds WHERE units=?";
-        try(Connection conn=DatabaseConnection.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
-            stmt.setInt(1, 0);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 

@@ -18,6 +18,8 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.sql.*;
 
+import static org.example.portfolio_management_system.DatabaseConnection.getConnection;
+
 public class PortfolioManagementController {
 
     @FXML
@@ -70,72 +72,95 @@ public class PortfolioManagementController {
 
     public void loadPortfolioData(int userId) {
         try {
-            Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT amount_invested, current_value FROM portfolio WHERE user_id = ? ORDER BY portfolio_id DESC LIMIT 1";
+            Connection connection = getConnection();
+
+            // SQL query to sum the amount_invested and current_value for the particular user
+            String query = "SELECT SUM(amount_invested) as totalamount, SUM(current_value) as currenttotal FROM portfolio WHERE user_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, userId);
-            calculateGains();
+            calculateGains(userId);
+            // Execute the query and fetch the summed results
             ResultSet resultSet = preparedStatement.executeQuery();
+
             if (resultSet.next()) {
-                double amountInvested = resultSet.getDouble("amount_invested");
-                double currentValue = resultSet.getDouble("current_value");
+                double amountInvested = resultSet.getDouble("totalamount");
+                double currentValue = resultSet.getDouble("currenttotal");
 
+                // Formatting the amounts to 4 decimal places
+                String formattedAmountInvested = String.format("%.4f", amountInvested);
                 String formattedCurrentValue = String.format("%.4f", currentValue);
-                double roundedCurrentValue = Double.parseDouble(formattedCurrentValue);
 
-                amountInvestedTextArea.setText(String.valueOf(amountInvested));
+                // Convert the formatted strings back to double (if required)
+                double roundedCurrentValue = Double.parseDouble(formattedCurrentValue);
+                double roundedAmountInvested = Double.parseDouble(formattedAmountInvested);
+
+                // Set the values to the respective text areas
+                amountInvestedTextArea.setText(String.valueOf(roundedAmountInvested));
                 currentValueTextArea.setText(String.valueOf(roundedCurrentValue));
             }
+
+            // Close the resources
             resultSet.close();
             preparedStatement.close();
             connection.close();
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public void calculateGains() {
+
+    public void calculateGains(int user_id) {
         double totalGain = 0.0;
         double totalAmountInvested = 0.0;
 
         try {
-            Connection connection = DatabaseConnection.getConnection();
-            Statement statement = connection.createStatement();
-            String query = "SELECT amount_invested, current_value, nav, costperunit FROM mutual_funds WHERE user_id = " + getCurrentUserId();
-            ResultSet resultSet = statement.executeQuery(query);
+            Connection connection = getConnection();
 
-            while (resultSet.next()) {
-                double amountInvested = resultSet.getDouble("amount_invested");
-                double currentValue = resultSet.getDouble("current_value");
+            // Query to sum the total amount invested and current value for the user
+            String query = "SELECT SUM(amount_invested) AS totalAmountInvested, SUM(current_value) AS totalCurrentValue " +
+                    "FROM portfolio WHERE user_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, user_id);
+            ResultSet resultSet = preparedStatement.executeQuery();
 
-                totalGain += (currentValue - amountInvested);
-                totalAmountInvested += amountInvested;
+            if (resultSet.next()) {
+                totalAmountInvested = resultSet.getDouble("totalAmountInvested");
+                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
 
+                // Calculate total gain
+                totalGain = totalCurrentValue - totalAmountInvested;
+
+                // Calculate gain percentage if amount invested is not zero
+                if (totalAmountInvested != 0) {
+                    double totalGainPercentage = (totalGain / totalAmountInvested) * 100;
+                    totalGainLabel.setText(String.format("       %.5f%%", totalGainPercentage));
+                } else {
+                    totalGainLabel.setText("         N/A");
+                }
+
+                // Display unrealized gain
+                if (totalAmountInvested != 0) {
+                    unrealizedGainLabel.setText(String.format("       %.5f", totalGain));
+                } else {
+                    unrealizedGainLabel.setText("        N/A");
+                }
             }
 
+            // Close resources
             resultSet.close();
-
-            if (totalAmountInvested != 0) {
-                double totalGainPercentage = (totalGain / totalAmountInvested) * 100;
-                totalGainLabel.setText(String.format("       %.5f%%", totalGainPercentage));
-            } else {
-                totalGainLabel.setText("         N/A");
-            }
-
-            if (totalAmountInvested != 0) {
-                unrealizedGainLabel.setText(String.format("       %.5f",totalGain));
-            } else {
-                unrealizedGainLabel.setText("        N/A");
-            }
+            preparedStatement.close();
+            connection.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+
     public void loadTableData() {
         try {
-            Connection connection = DatabaseConnection.getConnection();
+            Connection connection = getConnection();
             String query = "SELECT scheme_code, fund_name, amount_invested, current_value, units, type FROM portfolio WHERE user_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, getCurrentUserId());
@@ -198,4 +223,6 @@ public class PortfolioManagementController {
     public void handleprofileclick(ActionEvent event) throws IOException {
         switchToPage(event, "UserProfile.fxml", "User Profile");
     }
+    // In your controller class
+
 }

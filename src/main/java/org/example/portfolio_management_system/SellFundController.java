@@ -55,7 +55,9 @@ public class SellFundController {
     // Handle the sell action when the user submits the form
     @FXML
     public void handleSellAction()  {
-        String fundName = fundListView.getSelectionModel().getSelectedItem();  // Get the selected fund name
+        String fundName = fundListView.getSelectionModel().getSelectedItem();
+        String sipid = fundSearchField.getText();
+    // Get the selected fund name
         if (fundName == null) {
             statusLabel.setText("Please select a fund.");
             return;
@@ -79,7 +81,7 @@ public class SellFundController {
             double saleAmount = unitsToSell * nav;
 
             // Update the portfolio and store the sale transaction
-            updatePortfolioAfterSale(fundName, unitsToSell, saleAmount);
+            updatePortfolioAfterSale(fundName,sipid, unitsToSell, saleAmount);
             storeSaleTransaction(saleAmount, unitsToSell, fundName);
 
             statusLabel.setText(String.format("Successfully sold %.2f units for ₹%.2f", unitsToSell, saleAmount));
@@ -190,10 +192,13 @@ public class SellFundController {
     }
 
     // Update the portfolio after selling the units
-    private void updatePortfolioAfterSale(String fundName, double unitsToSell, double saleAmount) throws SQLException {
+    private void updatePortfolioAfterSale(String fundName,String fund,double unitsToSell, double saleAmount) throws SQLException {
         String updateSQL = "UPDATE sip SET total_units = total_units - ?, sip.sip_amount = sip_amount - ? WHERE fund_name = ? AND total_units >= ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
+            int userid = getCurrentUserId();
+            double totalUnits=0;
+            updatePortfolio(userid,fund,fundName,totalUnits-unitsToSell);
             stmt.setDouble(1, unitsToSell);
             stmt.setDouble(2, (unitsToSell * getCurrentNavForFund(fundName))); // Reduce invested amount
             stmt.setString(3, fundName);
@@ -219,7 +224,6 @@ public class SellFundController {
         String insertSQL = "INSERT INTO transactions (amount, units, type1, transaction_date, fund_name,fund_type) VALUES (?, ?, 'Sell', ?, ?,'SIP')";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
-
             stmt.setDouble(1, saleAmount);
             stmt.setDouble(2, unitsSold);
             stmt.setDate(3, Date.valueOf(LocalDate.now()));
@@ -254,6 +258,72 @@ public class SellFundController {
         } catch (SQLException e) {
             e.printStackTrace();
             unitsHeldLabel.setText("Error fetching units held.");
+        }
+    }
+    private int getCurrentUserId() {
+        return UserSession.getInstance().getUserId();
+    }
+    public void updatePortfolio(int userId, String fund_id, String fundname, double totalUnits) {
+        try {
+            Connection connection = DatabaseConnection.getConnection();
+
+            // Get the total invested amount and current value for this user from mutual_funds
+            String sumQuery = "SELECT SUM(amount_invested) AS totalAmountInvested, SUM(current_value) AS totalCurrentValue " +
+                    "FROM mutual_funds WHERE user_id = ?";
+            PreparedStatement ps = connection.prepareStatement(sumQuery);
+            ps.setInt(1, userId);
+            ResultSet resultSet = ps.executeQuery();
+
+            if (resultSet.next()) {
+                double totalAmountInvested = resultSet.getDouble("totalAmountInvested");
+                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
+
+                // Check if a portfolio entry for this user and fund already exists
+                String checkQuery = "SELECT * FROM portfolio WHERE user_id = ? AND scheme_code = ?";
+                PreparedStatement checkPs = connection.prepareStatement(checkQuery);
+                checkPs.setInt(1, userId);
+                checkPs.setString(2, fund_id);
+                ResultSet checkResultSet = checkPs.executeQuery();
+
+                if (checkResultSet.next()) {
+                    // If entry exists, update the existing portfolio record
+                    String updateQuery = "UPDATE portfolio SET amount_invested = ?, current_value = ?, units = ?, fund_name = ? " +
+                            "WHERE user_id = ? AND scheme_code = ?";
+                    PreparedStatement updatePs = connection.prepareStatement(updateQuery);
+                    updatePs.setDouble(1, totalAmountInvested);
+                    updatePs.setDouble(2, totalCurrentValue);
+                    updatePs.setDouble(3, totalUnits);
+                    updatePs.setString(4, fundname);
+                    updatePs.setInt(5, userId);
+                    updatePs.setString(6, fund_id);
+                    updatePs.executeUpdate();
+                    updatePs.close();
+                } else {
+                    // If no entry exists, you might want to insert a new record (optional)
+                    String insertQuery = "INSERT INTO portfolio (user_id, amount_invested, current_value, type, scheme_code, fund_name, units) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    PreparedStatement insertPs = connection.prepareStatement(insertQuery);
+                    insertPs.setInt(1, userId);
+                    insertPs.setDouble(2, totalAmountInvested);
+                    insertPs.setDouble(3, totalCurrentValue);
+                    insertPs.setString(4, "SIP");
+                    insertPs.setString(5, fund_id);
+                    insertPs.setString(6, fundname);
+                    insertPs.setDouble(7, totalUnits);
+                    insertPs.executeUpdate();
+                    insertPs.close();
+                }
+
+                checkResultSet.close();
+                checkPs.close();
+            }
+
+            resultSet.close();
+            ps.close();
+            connection.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
