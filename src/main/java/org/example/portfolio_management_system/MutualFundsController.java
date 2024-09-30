@@ -317,8 +317,8 @@ public class MutualFundsController {
                 // Ensure that values are non-zero before updating
                 if (totalAmountInvested > 0 && totalCurrentValue > 0) {
                     // Insert or update the portfolio record in the database
-                    String insertQuery = "INSERT INTO portfolio (user_id, amount_invested, current_value, scheme_code, fund_name, units) " +
-                            "VALUES (?, ?, ?, ?, ?, ?) " +
+                    String insertQuery = "INSERT INTO portfolio (user_id, amount_invested, current_value, scheme_code, fund_name, units,type) " +
+                            "VALUES (?, ?, ?, ?, ?, ?,'Mutual Funds') " +
                             "ON DUPLICATE KEY UPDATE " +
                             "amount_invested = VALUES(amount_invested), " +
                             "current_value = VALUES(current_value)";

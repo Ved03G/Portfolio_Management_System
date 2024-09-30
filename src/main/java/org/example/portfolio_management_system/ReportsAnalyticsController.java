@@ -67,7 +67,7 @@ public class ReportsAnalyticsController {
 
         try {
             // Connect to the database
-            connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp", "root", "Vedant@98");
+            connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
             statement = connection.createStatement();
 
             // Query to fetch fund_id from mutual_funds
@@ -107,7 +107,7 @@ public class ReportsAnalyticsController {
 
     // Fetch data from the database and populate the PieChart
     private void fetchDataAndPopulatePieChart() {
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/javafxapp", "root", "Vedant@98");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/javafxapp2", "root", "Servesh#21");
              Statement statement = connection.createStatement()) {
 
             String query = "SELECT type, SUM(amount_invested) AS Count FROM portfolio GROUP BY type";
@@ -127,6 +127,7 @@ public class ReportsAnalyticsController {
     }
 
     // Fetch NAV for a specific date from the API
+    // Fetch NAV for a specific date from the API, or get the closest available NAV
     public double getNavForDate(String fundId, String date) {
         double nav = 0.0;
         String apiUrl = "https://api.mfapi.in/mf/" + fundId;
@@ -154,17 +155,36 @@ public class ReportsAnalyticsController {
                 JSONObject jsonResponse = new JSONObject(response.toString());
                 JSONArray data = jsonResponse.getJSONArray("data");
 
-                // Loop through the data array to find the NAV for the specified date
+                // Variables to store the nearest available NAV
+                String closestDate = null;
+                double closestNav = 0.0;
+
+                // Loop through the data array to find the NAV for the specified date or the closest one
                 for (int i = 0; i < data.length(); i++) {
                     JSONObject entry = data.getJSONObject(i);
                     String navDate = entry.getString("date");
+                    double currentNav = entry.getDouble("nav");
 
-                    // Check if the date matches
+                    // If NAV for the exact date is found, return it
                     if (navDate.equals(date)) {
-                        nav = entry.getDouble("nav");
-                        break;
+                        return currentNav;
+                    }
+
+                    // Check if the current date is closer than the previous closest date
+                    if (closestDate == null || isCloserDate(date, navDate, closestDate)) {
+                        closestDate = navDate;
+                        closestNav = currentNav;
                     }
                 }
+
+                // If no exact match, return the closest available NAV
+                if (closestDate != null) {
+                    System.out.println("Using NAV from closest date: " + closestDate);
+                    nav = closestNav;
+                } else {
+                    System.out.println("No NAV data available for or near the requested date: " + date);
+                }
+
             } else {
                 System.out.println("Error: Received HTTP response code " + responseCode);
             }
@@ -179,17 +199,39 @@ public class ReportsAnalyticsController {
         return nav;
     }
 
+    // Helper method to determine which date is closer to the target date
+    private boolean isCloserDate(String targetDate, String newDate, String currentClosestDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+        // Parse the dates
+        LocalDate target = LocalDate.parse(targetDate, formatter);
+        LocalDate newLocalDate = LocalDate.parse(newDate, formatter);
+        LocalDate closestLocalDate = LocalDate.parse(currentClosestDate, formatter);
+
+        // Return true if the new date is closer to the target date than the current closest date
+        return Math.abs(target.toEpochDay() - newLocalDate.toEpochDay()) < Math.abs(target.toEpochDay() - closestLocalDate.toEpochDay());
+    }
+
+
     // Method to populate the current value line chart
+    // Method to populate the current value and invested value line chart for SIPs
     public void showDailyCurrentValueChart(LineChart<String, Number> lineChart, List<String> fundIds, LocalDate startDate, LocalDate endDate) {
         lineChart.getData().clear();
+
+        // Series for total current value
         XYChart.Series<String, Number> totalValueSeries = new XYChart.Series<>();
-        totalValueSeries.setName("Total Current Value");
+        totalValueSeries.setName("Total Current Value (SIPs)");
+
+        // Series for total invested value
+        XYChart.Series<String, Number> investedValueSeries = new XYChart.Series<>();
+        investedValueSeries.setName("Total Invested Value (SIPs)");
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
         // Iterate through each date from startDate to endDate
         for (LocalDate currentDate = startDate; !currentDate.isAfter(endDate); currentDate = currentDate.plusDays(1)) {
             double totalCurrentValue = 0.0;
+            double totalInvestedValue = 0.0;
             boolean hasInvestment = false;
 
             // Check each fund ID
@@ -209,14 +251,47 @@ public class ReportsAnalyticsController {
                     } else {
                         totalCurrentValue += investedAmountSIP; // Use invested amount if NAV is 0
                     }
+                    totalInvestedValue += investedAmountSIP; // Track invested amount
                     hasInvestment = true; // At least one SIP investment exists for the day
                 }
+            }
 
-                // Get invested amount and total units for the current fund from mutual funds
-                double investedAmountMF = getInvestedAmountForFund(fundId);
-                double totalUnitsMF = getTotalUnitsInvestedForFund(fundId);
+            // Add data to the chart only if there was an investment on that day
+            if (hasInvestment) {
+                totalValueSeries.getData().add(new XYChart.Data<>(currentDate.format(formatter), totalCurrentValue));
+                investedValueSeries.getData().add(new XYChart.Data<>(currentDate.format(formatter), totalInvestedValue));
+            }
+        }
 
-                // Fetch the NAV for the current date for Mutual Funds
+        // Add both series to the line chart
+        lineChart.getData().add(totalValueSeries);
+        lineChart.getData().add(investedValueSeries);
+    }
+
+    // Method to populate the current value and invested value line chart for Mutual Funds
+    public void showDailyCurrentValueChartForMutualFunds(LineChart<String, Number> lineChart, List<String> fundIds, LocalDate startDate, LocalDate endDate) {
+        lineChart.getData().clear();
+
+        // Series for total current value
+        XYChart.Series<String, Number> totalValueSeries = new XYChart.Series<>();
+        totalValueSeries.setName("Total Current Value (Mutual Funds)");
+
+        // Series for total invested value
+        XYChart.Series<String, Number> investedValueSeries = new XYChart.Series<>();
+        investedValueSeries.setName("Total Invested Value (Mutual Funds)");
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+        // Iterate through each date from startDate to endDate
+        for (LocalDate currentDate = startDate; !currentDate.isAfter(endDate); currentDate = currentDate.plusDays(1)) {
+            double totalCurrentValue = 0.0;
+            double totalInvestedValue = 0.0;
+            boolean hasInvestment = false;
+
+            // Check each fund ID
+            for (String fundId : fundIds) {
+                double investedAmountMF = getInvestedAmount(fundId);
+                double totalUnitsMF = getTotalValueForFund(fundId);
                 double navMF = getNavForDate(fundId, currentDate.format(formatter));
 
                 // Only consider mutual fund if it was purchased on or before the current date
@@ -225,60 +300,31 @@ public class ReportsAnalyticsController {
                         double currentValueMF = navMF * totalUnitsMF;
                         totalCurrentValue += currentValueMF;
                     } else {
-                        totalCurrentValue += investedAmountMF; // Use invested amount if NAV is 0
+                        totalCurrentValue += investedAmountMF;
                     }
-                    hasInvestment = true; // At least one mutual fund investment exists for the day
+                    totalInvestedValue += investedAmountMF; // Track invested amount
+                    hasInvestment = true;
                 }
             }
 
             // Add data to the chart only if there was an investment on that day
             if (hasInvestment) {
                 totalValueSeries.getData().add(new XYChart.Data<>(currentDate.format(formatter), totalCurrentValue));
+                investedValueSeries.getData().add(new XYChart.Data<>(currentDate.format(formatter), totalInvestedValue));
             }
         }
 
+        // Add both series to the line chart
         lineChart.getData().add(totalValueSeries);
+        lineChart.getData().add(investedValueSeries);
     }
-    public void showDailyCurrentValueChartForMutualFunds(LineChart<String, Number> lineChart, List<String> fundIds, LocalDate startDate, LocalDate endDate) {
-        lineChart.getData().clear();
-        XYChart.Series<String, Number> totalValueSeries = new XYChart.Series<>();
-        totalValueSeries.setName("Total Current Value (Mutual Funds)");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-
-        for (LocalDate currentDate = startDate; !currentDate.isAfter(endDate); currentDate = currentDate.plusDays(1)) {
-            double totalCurrentValue = 0.0;
-            boolean hasInvestment = false;
-
-            for (String fundId : fundIds) {
-                double investedAmountMF = getInvestedAmount(fundId);
-                double totalUnitsMF = getTotalValueForFund(fundId);
-                double navMF = getNavForDate(fundId, currentDate.format(formatter));
-
-                if (isMutualFundPurchasedOnOrBefore(fundId, currentDate) && totalUnitsMF > 0) {
-                    if (navMF != 0.0) {
-                        double currentValueMF = navMF * totalUnitsMF;
-                        totalCurrentValue += currentValueMF;
-                    } else {
-                        totalCurrentValue += investedAmountMF;
-                    }
-                    hasInvestment = true;
-                }
-            }
-
-            if (hasInvestment) {
-                totalValueSeries.getData().add(new XYChart.Data<>(currentDate.format(formatter), totalCurrentValue));
-            }
-        }
-
-        lineChart.getData().add(totalValueSeries);
-    }
 
     // Method to check if the fund was purchased on or before a given date
     private boolean isFundPurchasedOnOrBefore(String fundId, LocalDate date) {
         boolean purchased = false;
 
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp", "root", "Vedant@98");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
              PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) AS count FROM sip WHERE fund_id = ? AND start_date <= ?")) {
             statement.setString(1, fundId);
             statement.setString(2, date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))); // Use database format
@@ -299,7 +345,7 @@ public class ReportsAnalyticsController {
     private boolean isMutualFundPurchasedOnOrBefore(String fundId, LocalDate date) {
         boolean purchased = false;
 
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp", "root", "Vedant@98");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
              PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) AS count FROM mutual_funds WHERE scheme_code = ? AND mutual_funds.investment_date <= ?")) {
             statement.setString(1, fundId);
             statement.setString(2, date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))); // Use database format
@@ -320,7 +366,7 @@ public class ReportsAnalyticsController {
     private double getInvestedAmountForFund(String fundId) {
         double amount = 0.0;
 
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp", "root", "Vedant@98");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
              PreparedStatement statement = connection.prepareStatement("SELECT SUM(sip_amount) AS total FROM sip WHERE fund_id = ?")) {
             statement.setString(1, fundId);
             ResultSet resultSet = statement.executeQuery();
@@ -337,7 +383,7 @@ public class ReportsAnalyticsController {
     }
     private double getInvestedAmount(String fundId) {
         double amount = 0.0;
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp", "root", "Vedant@98");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
              PreparedStatement statement = connection.prepareStatement("SELECT SUM(amount_invested) AS total FROM mutual_funds WHERE scheme_code = ?")) {
             statement.setString(1, fundId);
             ResultSet resultSet = statement.executeQuery();
@@ -356,7 +402,7 @@ public class ReportsAnalyticsController {
 
         double totalUnits = 0.0;
 
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp", "root", "Vedant@98");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
              PreparedStatement statement = connection.prepareStatement("SELECT SUM(units) AS total FROM mutual_funds WHERE scheme_code = ?")) {
             statement.setString(1, fundId);
             ResultSet resultSet = statement.executeQuery();
@@ -376,7 +422,7 @@ public class ReportsAnalyticsController {
     private double getTotalUnitsInvestedForFund(String fundId) {
         double totalUnits = 0.0;
 
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp", "root", "Vedant@98");
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
              PreparedStatement statement = connection.prepareStatement("SELECT SUM(sip.total_units) AS total FROM sip WHERE fund_id = ?")) {
             statement.setString(1, fundId);
             ResultSet resultSet = statement.executeQuery();

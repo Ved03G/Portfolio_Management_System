@@ -20,6 +20,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.stage.Stage;
@@ -51,6 +54,41 @@ public class SIPController {
         loadMutualFunds();
         setupSearchFilter();
         loadFrequencyOptions();
+    }
+
+
+    public boolean isFundClosed(String fundId) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.mfapi.in/mf/" + fundId))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String jsonResponse = response.body();
+
+            JsonObject jsonObject = JsonParser.parseString(jsonResponse).getAsJsonObject();
+            JsonArray dataArray = jsonObject.getAsJsonArray("data");
+
+            if (dataArray.size() > 0) {
+                JsonObject lastEntry = dataArray.get(0).getAsJsonObject();
+                String dateString = lastEntry.get("date").getAsString();  // Assuming "date" field exists
+
+                // Parse the date using the format dd-MM-yyyy
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                LocalDate lastRecordedDate = LocalDate.parse(dateString, formatter);
+
+                LocalDate currentDate = LocalDate.now();
+                long daysBetween = ChronoUnit.DAYS.between(lastRecordedDate, currentDate);
+
+                // Check if the fund has been closed for more than 30 days
+                return daysBetween > 30;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;  // Default to not closed if there's an error
     }
 
     // Load mutual funds into the ObservableList
@@ -87,6 +125,7 @@ public class SIPController {
     }
 
     // Set up search filter for mutual funds
+    // Set up search filter for mutual funds
     private void setupSearchFilter() {
         fundSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null || newValue.isEmpty()) {
@@ -104,9 +143,47 @@ public class SIPController {
             if (selectedFund != null) {
                 fundSearchField.setText(selectedFund.getSchemeName());
                 fundListView.setVisible(false); // Hide ListView after selection
+
+                // Fetch NAV and display in Alert
+                String nav = fetchNAVForFund(selectedFund.getsipid());  // Method to fetch NAV
+                if (nav != null) {
+                    showNavAlert(selectedFund.getSchemeName(), nav); // Show NAV in Alert
+                } else {
+                    showAlert("Error", "Failed to fetch NAV for the selected fund.");
+                }
             }
         });
     }
+    private void showNavAlert(String schemeName, String nav) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("NAV Information");
+        alert.setHeaderText(null);
+        alert.setContentText("The current NAV for " + schemeName + " is: " + nav);
+        alert.showAndWait();
+    }
+
+
+    private String fetchNAVForFund(String fundId) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.mfapi.in/mf/" + fundId))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String jsonResponse = response.body();
+
+            MutualFund fundWithNav = parseFundDetails(jsonResponse);
+            if (fundWithNav != null) {
+                return fundWithNav.getNav();  // Return the NAV if available
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;  // Return null if NAV couldn't be fetched
+    }
+
+
 
     // Load frequency options for SIP
     private void loadFrequencyOptions() {
@@ -122,14 +199,20 @@ public class SIPController {
         if (selectedFund == null) {
             System.out.println("No valid fund selected.");
             navLabel.setText("No valid fund selected.");
-            return;
+            return; // Exit early if no valid fund is selected
+        }
+
+        // Check if the fund is closed
+        if (isFundClosed(selectedFund.getsipid())) {
+            showAlert("Fund Closed", "This mutual fund has been closed for more than 30 days and is not buyable.");
+            return; // Exit early if the fund is closed
         }
 
         String sipAmountText = sipAmountField.getText();
         if (sipAmountText == null || sipAmountText.isEmpty()) {
             System.out.println("SIP amount is empty.");
             navLabel.setText("Please enter SIP amount.");
-            return;
+            return; // Exit early if SIP amount is empty
         }
 
         LocalDate startDate = startDatePicker.getValue();
@@ -139,7 +222,7 @@ public class SIPController {
         if (startDate == null || endDate == null || frequency == null) {
             System.out.println("Start date, end date, or frequency is not selected.");
             navLabel.setText("Select all SIP details.");
-            return;
+            return; // Exit early if dates or frequency are not selected
         }
 
         try {
@@ -159,7 +242,7 @@ public class SIPController {
             if (fundWithNav == null || fundWithNav.getNav() == null) {
                 System.out.println("Failed to fetch NAV.");
                 navLabel.setText("Failed to fetch NAV.");
-                return;
+                return; // Exit early if NAV fetch fails
             }
 
             double nav = Double.parseDouble(fundWithNav.getNav());
@@ -175,7 +258,7 @@ public class SIPController {
 
             // Store SIP details and transactions with the current user's ID
             storeSIPDetails(userId, selectedFund, sipAmount, totalUnits, startDate, endDate, frequency, schemeName);
-            storeTransactionData(selectedFund ,userId, sipAmount, totalUnits, schemeName);
+            storeTransactionData(selectedFund, userId, sipAmount, totalUnits, schemeName);
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid SIP amount entered.");
@@ -190,6 +273,7 @@ public class SIPController {
             navLabel.setText("Error during SIP investment.");
         }
 
+        // Reload SIP Management Screen after a successful operation
         Stage stage = (Stage) navLabel.getScene().getWindow();
         try {
             reloadSIPManagementScreen();
@@ -197,6 +281,7 @@ public class SIPController {
             throw new RuntimeException(e);
         }
     }
+
 
     private void reloadSIPManagementScreen() throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SIPManagement.fxml"));
@@ -422,6 +507,13 @@ public class SIPController {
         }
 
         return currentNAV;
+    }
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
 }
