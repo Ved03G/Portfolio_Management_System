@@ -82,12 +82,19 @@ public class Transactionview {
     public void handleprofileclick(ActionEvent event) throws IOException {
         switchToPage1(event, "UserProfile.fxml", "User Profile",btnProfile);
     }
+    private int getcurrentuserid(){
+        return UserSession.getInstance().getUserId();
+    }
+
     // Method to load transactions from the database
     public void loadTransactionsFromDatabase() {
-        String query = "SELECT Amount,type1, transaction_date, fund_type,fund_name,units FROM transactions";
+        int userid=getcurrentuserid();
+        String query = "SELECT Amount,type1, transaction_date, fund_type,fund_name,units FROM transactions where user_id=?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(query);
              ResultSet rs = stmt.executeQuery()) {
+            stmt.setInt(1, userid);
+
 
             while (rs.next()) {
                 String amount = String.valueOf(rs.getDouble("Amount"));

@@ -158,9 +158,11 @@ public class SIPManagementController {
     }
     // Load SIP data from the database
     private void loadSipData() {
-        String query = "SELECT sip_id,fund_Name, frequency, start_date, end_date, sip_amount, total_units FROM sip";
+        int userid=getCurrentUserId();
+        String query = "SELECT sip_id,fund_Name, frequency, start_date, end_date, sip_amount, total_units FROM sip where user_id=?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, userid);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 int sipId = rs.getInt("sip_id");

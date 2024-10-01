@@ -8,19 +8,26 @@ public class UserSession {
         this.userId = userId;
     }
 
-    public static UserSession getInstance(int userId) {
-        if (instance == null) {
-            instance = new UserSession(userId);
-        }
-        return instance;
+    // Always create a new session for each login
+    public static void setInstance(int userId) {
+        instance = new UserSession(userId);
     }
 
+    // Get the current session instance
     public static UserSession getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("User not logged in");
+        }
         return instance;
     }
 
     public int getUserId() {
         return userId;
+    }
+
+    // Optional method to clear the session if needed
+    public static void clearSession() {
+        instance = null;
     }
 }
 
