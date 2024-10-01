@@ -1,3 +1,4 @@
+
 package org.example.portfolio_management_system;
 
 import javafx.event.ActionEvent;
@@ -29,6 +30,19 @@ public class RegisterController {
     private Button GetStarted;
     @FXML
     private PasswordField tfPassword, confirmPasswordField;
+    @FXML
+    private TextField tfPasswordVisible, confirmPasswordVisible;
+
+    @FXML
+    private CheckBox showPasswordCheckBox, showConfirmPasswordCheckBox;
+
+
+    @FXML
+    public void initialize() {
+        // Sync the visible password field with the hidden one initially
+        tfPasswordVisible.textProperty().bindBidirectional(tfPassword.textProperty());
+        confirmPasswordVisible.textProperty().bindBidirectional(confirmPasswordField.textProperty());
+    }
 
     // Event handler for the submit button
     @FXML
@@ -78,6 +92,40 @@ public class RegisterController {
         } catch (SQLException e) {
             e.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Registration Failed", "There was an error during registration: " + e.getMessage());
+        }
+    }
+
+
+
+    // Method to toggle visibility of the password field
+    @FXML
+    private void togglePasswordVisibility(ActionEvent event) {
+        if (showPasswordCheckBox.isSelected()) {
+            tfPassword.setVisible(false);
+            tfPassword.setManaged(false);
+            tfPasswordVisible.setVisible(true);
+            tfPasswordVisible.setManaged(true);
+        } else {
+            tfPassword.setVisible(true);
+            tfPassword.setManaged(true);
+            tfPasswordVisible.setVisible(false);
+            tfPasswordVisible.setManaged(false);
+        }
+    }
+
+    // Method to toggle visibility of the confirm password field
+    @FXML
+    private void toggleConfirmPasswordVisibility(ActionEvent event) {
+        if (showConfirmPasswordCheckBox.isSelected()) {
+            confirmPasswordField.setVisible(false);
+            confirmPasswordField.setManaged(false);
+            confirmPasswordVisible.setVisible(true);
+            confirmPasswordVisible.setManaged(true);
+        } else {
+            confirmPasswordField.setVisible(true);
+            confirmPasswordField.setManaged(true);
+            confirmPasswordVisible.setVisible(false);
+            confirmPasswordVisible.setManaged(false);
         }
     }
     private boolean checkUserExists(String username, String password, LocalDate dob) throws SQLException {
