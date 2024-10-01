@@ -21,7 +21,9 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ReportsAnalyticsController {
 
@@ -46,7 +48,7 @@ public class ReportsAnalyticsController {
     @FXML
     public void initialize() {
         // Initialize PieChart data
-        fetchDataAndPopulatePieChart();
+     populatePieChart();
 
         // Call to show the line chart
         List<String> fundIds = getFundIdsFromDatabase();
@@ -61,70 +63,65 @@ public class ReportsAnalyticsController {
     }
 
     private List<String> getFundIdsFromDatabase() {
-        List<String> fundIds = new ArrayList<>();
-        Connection connection = null;
-        Statement statement = null;
+        Set<String> fundIds = new HashSet<>();
+        int userId = UserSession.getInstance().getUserId();
 
-        try {
-            // Connect to the database
-            connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
-            statement = connection.createStatement();
-
-            // Query to fetch fund_id from mutual_funds
-            String mutualFundsQuery = "SELECT scheme_code FROM mutual_funds";
-            ResultSet resultSetMutualFunds = statement.executeQuery(mutualFundsQuery);
-
-            // Add fund IDs from mutual_funds table to the list
-            while (resultSetMutualFunds.next()) {
-                String fundId = resultSetMutualFunds.getString("scheme_code");
-                fundIds.add(fundId);
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21")) {
+            // Mutual Funds Query
+            String mutualFundsQuery = "SELECT scheme_code FROM mutual_funds WHERE user_id = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(mutualFundsQuery)) {
+                preparedStatement.setInt(1, userId);
+                try (ResultSet resultSetMutualFunds = preparedStatement.executeQuery()) {
+                    while (resultSetMutualFunds.next()) {
+                        fundIds.add(resultSetMutualFunds.getString("scheme_code"));
+                    }
+                }
             }
 
-            // Query to fetch fund_id from sip
-            String sipQuery = "SELECT fund_id FROM sip";
-            ResultSet resultSetSip = statement.executeQuery(sipQuery);
-
-            // Add fund IDs from sip table to the list
-            while (resultSetSip.next()) {
-                String fundId = resultSetSip.getString("fund_id");
-                fundIds.add(fundId);
+            // SIP Query
+            String sipQuery = "SELECT fund_id FROM sip WHERE user_id = ?";
+            try (PreparedStatement preparedStatement1 = connection.prepareStatement(sipQuery)) {
+                preparedStatement1.setInt(1, userId);
+                try (ResultSet resultSetSip = preparedStatement1.executeQuery()) {
+                    while (resultSetSip.next()) {
+                        fundIds.add(resultSetSip.getString("fund_id"));
+                    }
+                }
             }
-
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            // Close resources
-            try {
-                if (statement != null) statement.close();
-                if (connection != null) connection.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
 
-        return fundIds;
+        return new ArrayList<>(fundIds);
     }
+
 
     // Fetch data from the database and populate the PieChart
-    private void fetchDataAndPopulatePieChart() {
-        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/javafxapp2", "root", "Servesh#21");
-             Statement statement = connection.createStatement()) {
+    // Method to populate the PieChart with data from the portfolio table (SIP and Mutual Funds combined)
+    private void populatePieChart() {
+        portfolioPieChart.getData().clear(); // Clear existing data from the PieChart
+        int userId = UserSession.getInstance().getUserId(); // Get the user ID from the session
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21")) {
 
-            String query = "SELECT type, SUM(amount_invested) AS Count FROM portfolio GROUP BY type";
-            ResultSet resultSet = statement.executeQuery(query);
+            // Query to get the total amount invested grouped by type (SIP or Mutual Funds)
+            String query = "SELECT type, SUM(amount_invested) AS Count FROM portfolio WHERE user_id = ? GROUP BY type";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, userId);
+            ResultSet resultSet = statement.executeQuery();
 
+            // Iterate through the result set and add the data to the PieChart
             while (resultSet.next()) {
                 String type = resultSet.getString("type");
-                double count = resultSet.getDouble("Count");
-
-                PieChart.Data slice = new PieChart.Data(type, count);
-                portfolioPieChart.getData().add(slice);
+                double amountInvested = resultSet.getDouble("Count");
+                portfolioPieChart.getData().add(new PieChart.Data(type, amountInvested));
             }
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
+
 
     // Fetch NAV for a specific date from the API
     // Fetch NAV for a specific date from the API, or get the closest available NAV
@@ -323,11 +320,12 @@ public class ReportsAnalyticsController {
     // Method to check if the fund was purchased on or before a given date
     private boolean isFundPurchasedOnOrBefore(String fundId, LocalDate date) {
         boolean purchased = false;
-
+        int userId = UserSession.getInstance().getUserId();
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
-             PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) AS count FROM sip WHERE fund_id = ? AND start_date <= ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) AS count FROM sip WHERE fund_id = ? AND start_date <= ? and user_id=?")) {
             statement.setString(1, fundId);
             statement.setString(2, date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))); // Use database format
+            statement.setInt(3, userId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
@@ -344,11 +342,12 @@ public class ReportsAnalyticsController {
     // Method to check if the mutual fund was purchased on or before a given date
     private boolean isMutualFundPurchasedOnOrBefore(String fundId, LocalDate date) {
         boolean purchased = false;
-
+        int userId = UserSession.getInstance().getUserId();
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
-             PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) AS count FROM mutual_funds WHERE scheme_code = ? AND mutual_funds.investment_date <= ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) AS count FROM mutual_funds WHERE scheme_code = ? AND mutual_funds.investment_date <= ? and user_id=?")) {
             statement.setString(1, fundId);
-            statement.setString(2, date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))); // Use database format
+            statement.setString(2, date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));// Use database format
+            statement.setInt(3, userId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
@@ -365,10 +364,12 @@ public class ReportsAnalyticsController {
     // Get the invested amount for a given fund ID from SIPs
     private double getInvestedAmountForFund(String fundId) {
         double amount = 0.0;
+        int userId = UserSession.getInstance().getUserId();
 
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
-             PreparedStatement statement = connection.prepareStatement("SELECT SUM(sip_amount) AS total FROM sip WHERE fund_id = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT SUM(sip_amount) AS total FROM sip WHERE fund_id = ? and user_id=?")) {
             statement.setString(1, fundId);
+            statement.setInt(2, userId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
@@ -383,9 +384,11 @@ public class ReportsAnalyticsController {
     }
     private double getInvestedAmount(String fundId) {
         double amount = 0.0;
+        int userId = UserSession.getInstance().getUserId();
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
-             PreparedStatement statement = connection.prepareStatement("SELECT SUM(amount_invested) AS total FROM mutual_funds WHERE scheme_code = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT SUM(amount_invested) AS total FROM mutual_funds WHERE scheme_code = ? and user_id=?")) {
             statement.setString(1, fundId);
+            statement.setInt(2, userId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
@@ -401,10 +404,11 @@ public class ReportsAnalyticsController {
     private double getTotalValueForFund(String fundId) {
 
         double totalUnits = 0.0;
-
+        int userId = UserSession.getInstance().getUserId();
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
-             PreparedStatement statement = connection.prepareStatement("SELECT SUM(units) AS total FROM mutual_funds WHERE scheme_code = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT SUM(units) AS total FROM mutual_funds WHERE scheme_code = ? AND user_id=?")) {
             statement.setString(1, fundId);
+            statement.setInt(2, userId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
@@ -421,10 +425,12 @@ public class ReportsAnalyticsController {
     // Get the total units invested for a given fund ID from SIPs
     private double getTotalUnitsInvestedForFund(String fundId) {
         double totalUnits = 0.0;
+        int userId = UserSession.getInstance().getUserId();
 
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/javafxapp2", "root", "Servesh#21");
-             PreparedStatement statement = connection.prepareStatement("SELECT SUM(sip.total_units) AS total FROM sip WHERE fund_id = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT SUM(sip.total_units) AS total FROM sip WHERE fund_id = ? and user_id=?")) {
             statement.setString(1, fundId);
+            statement.setInt(2, userId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {

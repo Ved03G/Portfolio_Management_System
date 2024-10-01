@@ -1,6 +1,5 @@
 package org.example.portfolio_management_system;
 
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -22,8 +21,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
-
 import java.util.Date;
 import java.util.List;
 
@@ -31,14 +28,15 @@ public class Transactionview {
     private Stage stage;
     private Scene scene;
     private Parent root;
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/javafxapp2" ; // Update as necessary
+    private static final String URL = "jdbc:mysql://127.0.0.1:3306/javafxapp2"; // Update as necessary
     private static final String USER = "root"; // Your MySQL username
     private static final String PASSWORD = "Servesh#21"; // Your MySQL password
     private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
+
     @FXML
-    private    ListView<Transaction> transactionListView;
+    private ListView<Transaction> transactionListView;
     @FXML
-    private Button btnPortfolio,btnSIP,btnMutualFunds,btnReports,btnTransactions,btnProfile;
+    private Button btnPortfolio, btnSIP, btnMutualFunds, btnReports, btnTransactions, btnProfile;
 
     // Method to load the FXML of each section
     private void switchToPage1(ActionEvent event, String fxmlFile1, String title, Button clickedButton) throws IOException {
@@ -52,6 +50,7 @@ public class Transactionview {
         resetButtonStyles();
         clickedButton.getStyleClass().add("sidebar-button-active");
     }
+
     private void resetButtonStyles() {
         List<Button> buttons = List.of(btnPortfolio, btnSIP, btnMutualFunds, btnReports, btnTransactions, btnProfile);
         for (Button button : buttons) {
@@ -64,50 +63,50 @@ public class Transactionview {
     }
 
     public void handlesipclick(ActionEvent event) throws IOException {
-        switchToPage1(event, "SIPManagement.fxml", "SIP Management",btnSIP);
+        switchToPage1(event, "SIPManagement.fxml", "SIP Management", btnSIP);
     }
 
     public void handlemutualfundclick(ActionEvent event) throws IOException {
-        switchToPage1(event, "MutualFunds.fxml", "Mutual Funds",btnMutualFunds);
+        switchToPage1(event, "MutualFunds.fxml", "Mutual Funds", btnMutualFunds);
     }
 
     public void handlereportsclick(ActionEvent event) throws IOException {
-        switchToPage1(event, "ReportsAnalytics.fxml", "Reports & Analytics",btnReports);
+        switchToPage1(event, "ReportsAnalytics.fxml", "Reports & Analytics", btnReports);
     }
 
     public void handletransactionclick(ActionEvent event) throws IOException {
-        switchToPage1(event, "TransactionHistory.fxml", "Transaction History",btnTransactions);
+        switchToPage1(event, "TransactionHistory.fxml", "Transaction History", btnTransactions);
     }
 
     public void handleprofileclick(ActionEvent event) throws IOException {
-        switchToPage1(event, "UserProfile.fxml", "User Profile",btnProfile);
+        switchToPage1(event, "UserProfile.fxml", "User Profile", btnProfile);
     }
-    private int getcurrentuserid(){
-        return UserSession.getInstance().getUserId();
+
+    private int getCurrentUserId() {
+        return UserSession.getInstance().getUserId(); // Fetch the logged-in user's ID
     }
 
     // Method to load transactions from the database
     public void loadTransactionsFromDatabase() {
-        int userid=getcurrentuserid();
-        String query = "SELECT Amount,type1, transaction_date, fund_type,fund_name,units FROM transactions where user_id=?";
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement stmt = conn.prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
-            stmt.setInt(1, userid);
+        int userId = getCurrentUserId(); // Get current user ID
+        String query = "SELECT Amount, type1, transaction_date, fund_type, fund_name, units FROM transactions WHERE user_id = ?";
 
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, userId); // Set the current user's ID in the query
+            ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
                 String amount = String.valueOf(rs.getDouble("Amount"));
                 String type = rs.getString("type1");
-                Date transactionDate;
-                transactionDate = rs.getDate("transaction_date");
-                String fundtype = rs.getString("fund_type");
-                String fundname = rs.getString("fund_name");
+                Date transactionDate = rs.getDate("transaction_date");
+                String fundType = rs.getString("fund_type");
+                String fundName = rs.getString("fund_name");
                 double units = rs.getDouble("units");
 
-
                 // Add the transaction to the list
-                Transaction transaction = new Transaction(amount,type,transactionDate,fundtype,fundname,units);
+                Transaction transaction = new Transaction(amount, type, transactionDate, fundType, fundName, units);
                 transactionList.add(transaction);
             }
 
@@ -118,9 +117,9 @@ public class Transactionview {
         // Set the items in the ListView
         transactionListView.setItems(transactionList);
     }
+
     @FXML
     private void initialize() {
-
         transactionListView.setCellFactory(listView -> new ListCell<Transaction>() {
             @Override
             protected void updateItem(Transaction transaction, boolean empty) {
@@ -145,5 +144,4 @@ public class Transactionview {
         // Load transactions from the database and display them in the ListView
         loadTransactionsFromDatabase();
     }
-
 }

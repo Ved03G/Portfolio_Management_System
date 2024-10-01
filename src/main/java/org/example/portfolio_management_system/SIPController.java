@@ -3,6 +3,7 @@ package org.example.portfolio_management_system;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -225,8 +226,10 @@ public class SIPController {
             return; // Exit early if dates or frequency are not selected
         }
 
+        double totalUnits = 0;
+        double sipAmount = 0;
         try {
-            double sipAmount = Double.parseDouble(sipAmountText);
+            sipAmount = Double.parseDouble(sipAmountText);
             String fundId = selectedFund.getsipid();
 
             String fundDataUrl = "https://api.mfapi.in/mf/" + fundId;
@@ -246,7 +249,7 @@ public class SIPController {
             }
 
             double nav = Double.parseDouble(fundWithNav.getNav());
-            double totalUnits = sipAmount / nav;
+            totalUnits = sipAmount / nav;
 
             navLabel.setText(String.format("NAV: %.2f", nav));
             totalUnitsLabel.setText(String.format("Total Units: %.2f", totalUnits));
@@ -272,6 +275,15 @@ public class SIPController {
             System.out.println("Error during SIP investment: " + e.getMessage());
             navLabel.setText("Error during SIP investment.");
         }
+        double finalTotalUnits = totalUnits;
+        double finalSipAmount = sipAmount;
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Buy Data");
+            alert.setHeaderText(null);
+            alert.setContentText("Successfully bought " + finalTotalUnits + "units of" + selectedFund.schemeName + "for ₹" + finalSipAmount);
+            alert.showAndWait();
+        });
 
         // Reload SIP Management Screen after a successful operation
         Stage stage = (Stage) navLabel.getScene().getWindow();
@@ -375,7 +387,7 @@ public class SIPController {
 
     }
     private void storeSIPDetails(int userId,MutualFund fund, double sipAmount, double totalUnits, LocalDate startDate, LocalDate endDate, String frequency, String fund_Name) {
-        String insertSQL = "INSERT INTO sip (user_id, fund_id, sip_amount, total_units, start_date, end_date, frequency, fund_Name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String insertSQL = "INSERT INTO sip (user_id, fund_id, sip_amount, total_units, start_date, end_date, frequency, fund_Name) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
