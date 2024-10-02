@@ -20,6 +20,13 @@
                     <font>
                         <Font name="System Bold" size="12.0" />
                     </font>
+               <graphic>
+                      <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Portfolio Overview">
+                          <font>
+                              <Font name="System Bold" size="20.0" />
+                          </font>
+                      </Text>
+               </graphic>
                 </Button>
                 <ImageView fitHeight="89.0" fitWidth="250.0" layoutX="25.0">
                     <image>
@@ -30,63 +37,68 @@
                     <font>
                         <Font name="System Bold" size="12.0" />
                     </font>
+               <graphic>
+                      <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="SIP Management">
+                          <font>
+                              <Font name="System Bold" size="20.0" />
+                          </font>
+                      </Text>
+               </graphic>
                 </Button>
                 <Button fx:id="btnMutualFunds" layoutX="25.0" layoutY="232.0" mnemonicParsing="false" onAction="#handlemutualfundclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
                     <font>
                         <Font name="System Bold" size="12.0" />
                     </font>
+               <graphic>
+                      <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Mutual Funds">
+                          <font>
+                              <Font name="System Bold" size="20.0" />
+                          </font>
+                      </Text>
+               </graphic>
                 </Button>
                 <Button fx:id="btnReports" layoutX="25.0" layoutY="372.0" mnemonicParsing="false" onAction="#handlereportsclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
                     <font>
                         <Font name="System Bold" size="12.0" />
                     </font>
+               <graphic>
+                      <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Reports &amp; Analytics">
+                          <font>
+                              <Font name="System Bold" size="20.0" />
+                          </font>
+                      </Text>
+               </graphic>
                 </Button>
                 <Button fx:id="btnTransactions" layoutX="25.0" layoutY="442.0" mnemonicParsing="false" onAction="#handletransactionclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
                     <font>
                         <Font name="System Bold" size="12.0" />
                     </font>
+               <graphic>
+                      <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Transaction History">
+                          <font>
+                              <Font name="System Bold" size="20.0" />
+                          </font>
+                      </Text>
+               </graphic>
                 </Button>
                 <Button fx:id="btnProfile" layoutX="25.0" layoutY="512.0" mnemonicParsing="false" onAction="#handleprofileclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
                     <font>
                         <Font name="System Bold" size="12.0" />
                     </font>
+               <graphic>
+                      <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="User Profile">
+                          <font>
+                              <Font name="System Bold" size="20.0" />
+                          </font>
+                      </Text>
+               </graphic>
                 </Button>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="169.0">
+                <ImageView cache="true" cacheHint="SCALE_AND_ROTATE" fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="170.0">
                     <image>
                         <Image url="@icons/pie-chart.png" />
                     </image>
                 </ImageView>
-                <Text fill="#a3c87f" layoutX="73.0" layoutY="192.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Portfolio Overview">
-                    <font>
-                        <Font name="System Bold" size="20.0" />
-                    </font>
-                </Text>
-                <Text fill="#a3c87f" layoutX="97.0" layoutY="262.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Mutual Funds">
-                    <font>
-                        <Font name="System Bold" size="20.0" />
-                    </font>
-                </Text>
-                <Text fill="#a3c87f" layoutX="81.0" layoutY="332.0" strokeType="OUTSIDE" strokeWidth="0.0" text="SIP Management">
-                    <font>
-                        <Font name="System Bold" size="20.0" />
-                    </font>
-                </Text>
-                <Text fill="#a3c87f" layoutX="71.0" layoutY="402.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Reports &amp; Analytics">
-                    <font>
-                        <Font name="System Bold" size="20.0" />
-                    </font>
-                </Text>
-                <Text fill="#a3c87f" layoutX="69.0" layoutY="472.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Transaction History">
-                    <font>
-                        <Font name="System Bold" size="20.0" />
-                    </font>
-                </Text>
-                <Text fill="#a3c87f" layoutX="107.0" layoutY="542.0" strokeType="OUTSIDE" strokeWidth="0.0" text="User Profile">
-                    <font>
-                        <Font name="System Bold" size="20.0" />
-                    </font>
-                </Text>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="239.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="240.0">
                     <image>
                         <Image url="@icons/fund.png" />
                     </image>
@@ -101,7 +113,7 @@
                         <Image url="@icons/report.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="449.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="450.0">
                     <image>
                         <Image url="@icons/bill.png" />
                     </image>
