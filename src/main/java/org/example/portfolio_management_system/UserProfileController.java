@@ -6,10 +6,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+
 
 import java.io.IOException;
 import javafx.fxml.Initializable;
@@ -29,11 +31,32 @@ public class UserProfileController implements Initializable {
     private PasswordField passwordField;
     @FXML
     private DatePicker dobPicker;
+    @FXML
+    private Button btnPortfolio, btnSIP, btnMutualFunds, btnReports, btnTransactions, btnProfile;
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         int userId = getCurrentUserId();
-        loadUserData(userId);  // Call the method when the view is initialized
+        loadUserData(userId);// Call the method when the view is initialized
+        addHoverEffect(btnPortfolio);
+        addHoverEffect(btnSIP);
+        addHoverEffect(btnMutualFunds);
+        addHoverEffect(btnReports);
+        addHoverEffect(btnTransactions);
+        addHoverEffect(btnProfile);
+
+    }
+    private void addHoverEffect(Button button) {
+        button.setOnMouseEntered(e -> {
+            button.setScaleX(1.1); // Enlarge button by 10%
+            button.setScaleY(1.1);
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setScaleX(1.0); // Reset to original size
+            button.setScaleY(1.0);
+        });
     }
     // Method to load user data
     public void loadUserData(int userId) {
@@ -62,6 +85,7 @@ public class UserProfileController implements Initializable {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
     }
 
     // Method to save updated profile data

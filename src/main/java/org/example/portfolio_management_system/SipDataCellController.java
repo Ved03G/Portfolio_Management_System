@@ -33,6 +33,9 @@ public class SipDataCellController {
     @FXML
     private SipData sipData;
 
+    @FXML
+    private SIPManagementController sipman;
+
 
     // Initialize the controller (Optional, if needed)
 // Set the SIP data to the cell
@@ -100,12 +103,15 @@ public class SipDataCellController {
                 double nav = sipData.getNav(); // Assuming SIP data has NAV
                 double amountInvested = remainingUnits * nav;
 
-
+                int userId = getCurrentUserId();
                 // Store transaction and update database
-                deleteFundFromDatabase(amountInvested, remainingUnits, sipData.getSip_id());
-                storeSaleTransaction(amountInvested, unitsToSell, sipData.getSipName());
-              //  updatePortfolio(getCurrentUserId(),sipData.getFundId(),sipData.getSipName(),remainingUnits);
+                deleteFundFromDatabase(amountInvested, remainingUnits, sipData.getSip_id(),userId);
+                storeSaleTransaction(amountInvested, unitsToSell, sipData.getSipName(),userId);
+              //updatePortfolio(getCurrentUserId(),sipData.getFundId(),sipData.getSipName(),remainingUnits);
 
+
+                // Update portfolio after the sale
+                 updatePortfolio(userId, sipData.getFundId(), sipData.getSipName(), remainingUnits,amountInvested);
                 // Success alert
                 showAlert("Success", "Success", "You have successfully sold " + unitsToSell +
                         " units for ₹ " + investedAmount +
@@ -125,8 +131,8 @@ public class SipDataCellController {
         return UserSession.getInstance().getUserId();
     }
 
-    private void storeSaleTransaction(double saleAmount, double unitsSold, String fundName) throws SQLException {
-        String insertSQL = "INSERT INTO transactions (amount, units, type1, transaction_date, fund_name,fund_type) VALUES (?, ?, 'Sell', ?, ?,'SIP')";
+    private void storeSaleTransaction(double saleAmount, double unitsSold, String fundName, int userId) throws SQLException {
+        String insertSQL = "INSERT INTO transactions (amount, units, type1, transaction_date, fund_name,fund_type,user_id) VALUES (?, ?, 'Sell', ?, ?,'SIP',?) ";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
 
@@ -134,6 +140,7 @@ public class SipDataCellController {
             stmt.setDouble(2, unitsSold);
             stmt.setDate(3, Date.valueOf(LocalDate.now()));
             stmt.setString(4, fundName);
+            stmt.setInt(5, userId);
 
             stmt.executeUpdate();
         }
@@ -162,15 +169,16 @@ public class SipDataCellController {
         alert.setContentText(content);
         alert.showAndWait();
     }
-    private void deleteFundFromDatabase(double amount, double units,int sip_id) {
+    private void deleteFundFromDatabase(double amount, double units, int sip_id, int userId) {
         try {
             Connection connection = DatabaseConnection.getConnection();
-            String deleteQuery = "UPDATE sip Set total_units=?,sip_amount=? where sip_id=?";
+            String deleteQuery = "UPDATE sip Set total_units=?,sip_amount=? where sip_id=? and user_id=?";
             PreparedStatement ps = connection.prepareStatement(deleteQuery);
 
             ps.setDouble(1, units);// Set the scheme code of the selected fund
             ps.setDouble(2, amount);
             ps.setInt(3, sip_id);
+            ps.setInt(4, userId);
             ps.executeUpdate();  // Execute the deletion
 
             ps.close();
@@ -178,16 +186,18 @@ public class SipDataCellController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        String deleteQuery = "DELETE FROM sip WHERE sip.total_units=?";
+        String deleteQuery = "DELETE FROM sip WHERE sip.total_units=? and user_id=?";
         try(Connection conn=DatabaseConnection.getConnection();
             PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
             stmt.setInt(1, 0);
+            stmt.setInt(2, userId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
-    public void updatePortfolio(int userId, String fund_id, String fundname, double totalUnits) {
+
+    public void updatePortfolio(int userId, String fund_id, String fundname, double totalUnits,double amountInvested) throws SQLException {
         try {
             Connection connection = DatabaseConnection.getConnection();
 
@@ -199,8 +209,8 @@ public class SipDataCellController {
             ResultSet resultSet = ps.executeQuery();
 
             if (resultSet.next()) {
-                double totalAmountInvested = resultSet.getDouble("totalAmountInvested");
-                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
+                double totalAmountInvested = amountInvested;
+                double totalCurrentValue = totalUnits* sipData.getNav();
 
                 // Check if a portfolio entry for this user and fund already exists
                 String checkQuery = "SELECT * FROM portfolio WHERE user_id = ? AND scheme_code = ?";

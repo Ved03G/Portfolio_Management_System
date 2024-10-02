@@ -8,10 +8,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
@@ -49,6 +46,9 @@ public class PortfolioManagementController {
     private Scene scene;
     private Parent root;
 
+    @FXML
+    private Button btnPortfolio, btnSIP, btnMutualFunds, btnReports, btnTransactions, btnProfile;
+
     private ObservableList<Portfolio> portfoliosList = FXCollections.observableArrayList();
 
     public void initialize() {
@@ -64,6 +64,24 @@ public class PortfolioManagementController {
 
 
         loadTableData();
+        addHoverEffect(btnPortfolio);
+        addHoverEffect(btnSIP);
+        addHoverEffect(btnMutualFunds);
+        addHoverEffect(btnReports);
+        addHoverEffect(btnTransactions);
+        addHoverEffect(btnProfile);
+    }
+
+    private void addHoverEffect(Button button) {
+        button.setOnMouseEntered(e -> {
+            button.setScaleX(1.1); // Enlarge button by 10%
+            button.setScaleY(1.1);
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setScaleX(1.0); // Reset to original size
+            button.setScaleY(1.0);
+        });
     }
 
     private int getCurrentUserId() {

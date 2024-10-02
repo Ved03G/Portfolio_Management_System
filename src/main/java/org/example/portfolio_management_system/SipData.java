@@ -14,9 +14,10 @@ public class SipData {
     private final double returns;
     private final double nav;
     private final int sip_id;
+    private String fundId;
 
 
-    public SipData(int sip_id,String sipName, String frequency, LocalDate startDate, LocalDate endDate, double investedAmount, double totalUnits, double currentAmount, double returns, double nav) {
+    public SipData(int sip_id,String sipName, String frequency, LocalDate startDate, LocalDate endDate, double investedAmount, double totalUnits, double currentAmount, double returns, double nav,String fundId) {
         this.sipName = sipName;
         this.sip_id = sip_id;
         this.frequency = frequency;
@@ -27,6 +28,7 @@ public class SipData {
         this.currentAmount = currentAmount;
         this.returns = returns;
         this.nav=nav;
+        this.fundId = fundId;
     }
 
     public String getSipName() {
@@ -71,5 +73,9 @@ public class SipData {
     }
     public int getSip_id() {
         return sip_id;
+    }
+
+    public String getFundId() {
+        return fundId;
     }
 }

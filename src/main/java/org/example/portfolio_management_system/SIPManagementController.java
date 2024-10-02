@@ -26,6 +26,7 @@ import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 public class SIPManagementController {
 
@@ -120,10 +121,14 @@ public class SIPManagementController {
 
     @FXML
     private void initialize() {
+
+//        sipListView.getScene().getStylesheets().add(Objects.requireNonNull(getClass().getResource("styles.css")).toExternalForm());
         // Set cell factory
+
         sipListView.setCellFactory(listView -> new ListCell<SipData>() {
             private final FXMLLoader loader = new FXMLLoader(getClass().getResource("sipdatacell.fxml"));
             private final AnchorPane cell;
+
 
             {
                 try {
@@ -131,7 +136,20 @@ public class SIPManagementController {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+//                cell.setOnMouseEntered(event -> cell.setStyle("-fx-background-color: #e0e0e0;"));
+//                cell.setOnMouseExited(event -> cell.setStyle("-fx-background-color: transparent;"));
+                cell.setOnMouseEntered(event -> {
+                    cell.setScaleX(1.02); // Scale 5% larger
+                    cell.setScaleY(1.02);
+                });
+
+                cell.setOnMouseExited(event -> {
+                    cell.setScaleX(1); // Reset to normal size
+                    cell.setScaleY(1);
+                });
+
             }
+
 
             @Override
             protected void updateItem(SipData item, boolean empty) {
@@ -152,6 +170,23 @@ public class SIPManagementController {
 
         // Set up search field listener
         searchField.textProperty().addListener((observable, oldValue, newValue) -> filterSipData(newValue));
+        addHoverEffect(btnPortfolio);
+        addHoverEffect(btnSIP);
+        addHoverEffect(btnMutualFunds);
+        addHoverEffect(btnReports);
+        addHoverEffect(btnTransactions);
+        addHoverEffect(btnProfile);
+    }
+    private void addHoverEffect(Button button) {
+        button.setOnMouseEntered(e -> {
+            button.setScaleX(1.1); // Enlarge button by 10%
+            button.setScaleY(1.1);
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setScaleX(1.0); // Reset to original size
+            button.setScaleY(1.0);
+        });
     }
     private int getCurrentUserId() {
         return UserSession.getInstance().getUserId();
@@ -159,7 +194,7 @@ public class SIPManagementController {
     // Load SIP data from the database
     private void loadSipData() {
         int userid=getCurrentUserId();
-        String query = "SELECT sip_id,fund_Name, frequency, start_date, end_date, sip_amount, total_units FROM sip where user_id=?";
+        String query = "SELECT sip_id,fund_Name, frequency, start_date, end_date, sip_amount, total_units,fund_id FROM sip where user_id=?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setInt(1, userid);
@@ -172,11 +207,12 @@ public class SIPManagementController {
                 LocalDate endDate = rs.getDate("end_date").toLocalDate();
                 double investedAmount = rs.getDouble("sip_amount");
                 double totalUnits = rs.getDouble("total_units");
+                String fundId = rs.getString("fund_id");
                 double currentAmount = fetchCurrentAmount(sipName, totalUnits);
                 double returns = currentAmount - investedAmount;
                 double nav = getCurrentNavForFund(sipName);
 
-                SipData sipData = new SipData(sipId, sipName, frequency, startDate, endDate, investedAmount, totalUnits, currentAmount, returns, nav);
+                SipData sipData = new SipData(sipId, sipName, frequency, startDate, endDate, investedAmount, totalUnits, currentAmount, returns, nav,fundId);
                 sipDataList.add(sipData);
             }
             originalSipDataList.setAll(sipDataList); // Store original data for filtering

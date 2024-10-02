@@ -96,6 +96,24 @@ public class MutualFundsController {
                 selectedFund = newSelection;
             }
         });
+        // Add hover effects to buttons
+        addHoverEffect(btnPortfolio);
+        addHoverEffect(btnSIP);
+        addHoverEffect(btnMutualFunds);
+        addHoverEffect(btnReports);
+        addHoverEffect(btnTransactions);
+        addHoverEffect(btnProfile);
+    }
+    private void addHoverEffect(Button button) {
+        button.setOnMouseEntered(e -> {
+            button.setScaleX(1.1); // Enlarge button by 10%
+            button.setScaleY(1.1);
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setScaleX(1.0); // Reset to original size
+            button.setScaleY(1.0);
+        });
     }
     public void loadTableData() {
         try {

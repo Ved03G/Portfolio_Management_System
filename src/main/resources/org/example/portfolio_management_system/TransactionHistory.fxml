@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.shape.Line?>
-<?import javafx.scene.text.Font?>
-<?import javafx.scene.text.Text?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane maxHeight="700.0" maxWidth="1100.0" minHeight="700.0" minWidth="1100.0" prefHeight="700.0" prefWidth="1100.0" style="-fx-background-color: #F6F6F6;" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.Transactionview">
+<AnchorPane maxHeight="700.0" maxWidth="1100.0" minHeight="700.0" minWidth="1100.0" prefHeight="700.0" prefWidth="1100.0" style="-fx-background-color: #F6F6F6;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.Transactionview">
     <children>
         <Pane prefHeight="200.0" prefWidth="200.0" styleClass="container22" stylesheets="@style.css">
             <children>
@@ -103,22 +98,22 @@
                         <Image url="@icons/fund.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="309.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="310.0">
                     <image>
                         <Image url="@icons/insurance.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="379.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="380.0">
                     <image>
                         <Image url="@icons/report.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="450.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="21.0" layoutY="450.0">
                     <image>
                         <Image url="@icons/bill.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="37.0" layoutY="519.0">
+                <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="26.0" layoutY="520.0">
                     <image>
                         <Image url="@icons/user.png" />
                     </image>
@@ -147,6 +142,6 @@
             </children>
         </Pane>
         <Label layoutX="312.0" layoutY="70.0" prefHeight="30.0" prefWidth="198.0" style="-fx-background-color: #13121B; -fx-text-fill: #FFFFFF; -fx-font-size: 20px; -fx-background-radius: 8px;" text=" Current Transactions" textFill="WHITE" />
-      <ListView fx:id="transactionListView" layoutX="386.0" layoutY="131.0" prefHeight="526.0" prefWidth="646.0" />
+      <ListView fx:id="transactionListView" layoutX="377.0" layoutY="131.0" prefHeight="526.0" prefWidth="655.0" />
     </children>
 </AnchorPane>

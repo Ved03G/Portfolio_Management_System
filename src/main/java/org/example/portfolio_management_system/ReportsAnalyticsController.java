@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
+import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -40,6 +41,9 @@ public class ReportsAnalyticsController {
     private LineChart<String, Number> mutualFundLineChart;
 
     @FXML
+    private Button btnPortfolio, btnSIP, btnMutualFunds, btnReports, btnTransactions, btnProfile;
+
+    @FXML
     private CategoryAxis xAxis;
 
     @FXML
@@ -60,6 +64,24 @@ public class ReportsAnalyticsController {
         // Fetch and display the daily current values
         showDailyCurrentValueChart(lineChart, fundIds, startDate, endDate);
         showDailyCurrentValueChartForMutualFunds(mutualFundLineChart, fundIds, startDate, endDate);
+        // Add hover effects to buttons
+        addHoverEffect(btnPortfolio);
+        addHoverEffect(btnSIP);
+        addHoverEffect(btnMutualFunds);
+        addHoverEffect(btnReports);
+        addHoverEffect(btnTransactions);
+        addHoverEffect(btnProfile);
+    }
+    private void addHoverEffect(Button button) {
+        button.setOnMouseEntered(e -> {
+            button.setScaleX(1.1); // Enlarge button by 10%
+            button.setScaleY(1.1);
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setScaleX(1.0); // Reset to original size
+            button.setScaleY(1.0);
+        });
     }
 
     private List<String> getFundIdsFromDatabase() {

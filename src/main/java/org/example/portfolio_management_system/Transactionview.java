@@ -134,14 +134,45 @@ public class Transactionview {
                         controller.setTransactionData(transaction);
                         setGraphic(cell);
                         setPadding(new Insets(10));
+                        // Add mouse enter event to enlarge the cell
+                        cell.setOnMouseEntered(e -> {
+                            cell.setScaleX(1.02); // Enlarge cell by 5%
+                            cell.setScaleY(1.02);
+                        });
+
+                        // Add mouse exit event to reset the cell size
+                        cell.setOnMouseExited(e -> {
+                            cell.setScaleX(1.0); // Reset to original size
+                            cell.setScaleY(1.0);
+                        });
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
                 }
             }
+
         });
 
         // Load transactions from the database and display them in the ListView
         loadTransactionsFromDatabase();
+        addHoverEffect(btnPortfolio);
+        addHoverEffect(btnSIP);
+        addHoverEffect(btnMutualFunds);
+        addHoverEffect(btnReports);
+        addHoverEffect(btnTransactions);
+        addHoverEffect(btnProfile);
+    }
+    private void addHoverEffect(Button button) {
+        button.setOnMouseEntered(e -> {
+            button.setScaleX(1.1); // Enlarge button by 10%
+            button.setScaleY(1.1);
+        });
+
+        button.setOnMouseExited(e -> {
+            button.setScaleX(1.0); // Reset to original size
+            button.setScaleY(1.0);
+        });
     }
 }
+

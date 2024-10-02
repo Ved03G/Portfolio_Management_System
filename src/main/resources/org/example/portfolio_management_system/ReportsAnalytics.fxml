@@ -96,32 +96,32 @@
                       </Text>
                </graphic>
                 </Button>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="169.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="170.0">
                     <image>
                         <Image url="@icons/pie-chart.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="239.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="240.0">
                     <image>
                         <Image url="@icons/fund.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="309.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="310.0">
                     <image>
                         <Image url="@icons/insurance.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="379.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="380.0">
                     <image>
                         <Image url="@icons/report.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="35.0" layoutY="449.0">
+                <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="450.0">
                     <image>
                         <Image url="@icons/bill.png" />
                     </image>
                 </ImageView>
-                <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="37.0" layoutY="519.0">
+                <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="26.0" layoutY="520.0">
                     <image>
                         <Image url="@icons/user.png" />
                     </image>
