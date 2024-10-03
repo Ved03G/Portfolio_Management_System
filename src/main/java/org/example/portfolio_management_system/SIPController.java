@@ -15,6 +15,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -50,17 +53,26 @@ public class SIPController {
     private ObservableList<MutualFund> mutualFunds = FXCollections.observableArrayList();
     private FilteredList<MutualFund> filteredMutualFunds;
 
+
+    private static final String PROXY_HOST = "10.0.1.6"; // Replace with your proxy host
+    private static final int PROXY_PORT = 8030;
     @FXML
     public void initialize() {
         loadMutualFunds();
         setupSearchFilter();
         loadFrequencyOptions();
     }
+    private HttpClient createHttpClient() {
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_HOST, PROXY_PORT));
+        return HttpClient.newBuilder()
+                .proxy(ProxySelector.of(new InetSocketAddress(PROXY_HOST, PROXY_PORT)))
+                .build();
+    }
 
 
     public boolean isFundClosed(String fundId) {
         try {
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = createHttpClient(); // Use the proxy-enabled HttpClient
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://api.mfapi.in/mf/" + fundId))
                     .build();
@@ -73,28 +85,26 @@ public class SIPController {
 
             if (dataArray.size() > 0) {
                 JsonObject lastEntry = dataArray.get(0).getAsJsonObject();
-                String dateString = lastEntry.get("date").getAsString();  // Assuming "date" field exists
+                String dateString = lastEntry.get("date").getAsString();
 
-                // Parse the date using the format dd-MM-yyyy
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
                 LocalDate lastRecordedDate = LocalDate.parse(dateString, formatter);
 
                 LocalDate currentDate = LocalDate.now();
                 long daysBetween = ChronoUnit.DAYS.between(lastRecordedDate, currentDate);
 
-                // Check if the fund has been closed for more than 30 days
                 return daysBetween > 30;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return false;  // Default to not closed if there's an error
+        return false;
     }
 
     // Load mutual funds into the ObservableList
     private void loadMutualFunds() {
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = createHttpClient(); // Use the proxy-enabled HttpClient
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.mfapi.in/mf"))
                 .build();
@@ -116,8 +126,7 @@ public class SIPController {
 
             filteredMutualFunds = new FilteredList<>(mutualFunds, p -> true);
             fundListView.setItems(filteredMutualFunds);
-
-            fundListView.setVisible(false); // Initially hide ListView
+            fundListView.setVisible(false);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -146,7 +155,7 @@ public class SIPController {
                 fundListView.setVisible(false); // Hide ListView after selection
 
                 // Fetch NAV and display in Alert
-                String nav = fetchNAVForFund(selectedFund.getsipid());  // Method to fetch NAV
+                String nav = String.valueOf(fetchNAVForFund(selectedFund.getsipid()));  // Method to fetch NAV
                 if (nav != null) {
                     showNavAlert(selectedFund.getSchemeName(), nav); // Show NAV in Alert
                 } else {
@@ -164,137 +173,57 @@ public class SIPController {
     }
 
 
-    private String fetchNAVForFund(String fundId) {
+    // Fetch NAV for a specific fund using proxy settings
+    private double fetchNAVForFund(String fundId) {
+        double navValue = 0.0;
+
         try {
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = createHttpClient(); // Use the proxy-enabled HttpClient
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.mfapi.in/mf/" + fundId))
+                    .uri(URI.create("https://api.mfapi.in/mf/" + fundId + "/nav"))
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             String jsonResponse = response.body();
 
-            MutualFund fundWithNav = parseFundDetails(jsonResponse);
-            if (fundWithNav != null) {
-                return fundWithNav.getNav();  // Return the NAV if available
+            JsonObject jsonObject = JsonParser.parseString(jsonResponse).getAsJsonObject();
+            if (jsonObject.has("data")) {
+                JsonArray dataArray = jsonObject.getAsJsonArray("data");
+                if (dataArray.size() > 0) {
+                    JsonObject navEntry = dataArray.get(0).getAsJsonObject();
+                    navValue = navEntry.get("nav").getAsDouble();
+                }
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+            System.out.println("Error fetching NAV for fund: " + e.getMessage());
         }
-        return null;  // Return null if NAV couldn't be fetched
+
+        return navValue;
     }
 
-
+    // Handle SIP investment using proxy settings
+    public void handleSIPInvestment(String fundId, double sipAmount) {
+        try {
+            double navValue = fetchNAVForFund(fundId); // Fetch NAV using proxy settings
+            if (navValue > 0) {
+                double unitsPurchased = sipAmount / navValue;
+                System.out.println("SIP Investment for Fund ID " + fundId + ": " + unitsPurchased + " units purchased.");
+                // Add any additional logic for SIP handling (e.g., storing the investment)
+            } else {
+                System.out.println("Invalid NAV value retrieved for Fund ID: " + fundId);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error handling SIP investment: " + e.getMessage());
+        }
+    }
 
     // Load frequency options for SIP
     private void loadFrequencyOptions() {
         ObservableList<String> frequencyOptions = FXCollections.observableArrayList("Monthly", "Quarterly", "Yearly");
         frequencyChoiceBox.setItems(frequencyOptions);
     }
-
-    // Handle SIP investment
-    public void handleSIPInvestment() {
-        String selectedFundName = fundSearchField.getText();
-        MutualFund selectedFund = findFundByName(selectedFundName);
-
-        if (selectedFund == null) {
-            System.out.println("No valid fund selected.");
-            navLabel.setText("No valid fund selected.");
-            return; // Exit early if no valid fund is selected
-        }
-
-        // Check if the fund is closed
-        if (isFundClosed(selectedFund.getsipid())) {
-            showAlert("Fund Closed", "This mutual fund has been closed for more than 30 days and is not buyable.");
-            return; // Exit early if the fund is closed
-        }
-
-        String sipAmountText = sipAmountField.getText();
-        if (sipAmountText == null || sipAmountText.isEmpty()) {
-            System.out.println("SIP amount is empty.");
-            navLabel.setText("Please enter SIP amount.");
-            return; // Exit early if SIP amount is empty
-        }
-
-        LocalDate startDate = startDatePicker.getValue();
-        LocalDate endDate = endDatePicker.getValue();
-        String frequency = frequencyChoiceBox.getValue();
-
-        if (startDate == null || endDate == null || frequency == null) {
-            System.out.println("Start date, end date, or frequency is not selected.");
-            navLabel.setText("Select all SIP details.");
-            return; // Exit early if dates or frequency are not selected
-        }
-
-        double totalUnits = 0;
-        double sipAmount = 0;
-        try {
-            sipAmount = Double.parseDouble(sipAmountText);
-            String fundId = selectedFund.getsipid();
-
-            String fundDataUrl = "https://api.mfapi.in/mf/" + fundId;
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(fundDataUrl))
-                    .build();
-
-            HttpClient client = HttpClient.newHttpClient();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String jsonResponse = response.body();
-
-            MutualFund fundWithNav = parseFundDetails(jsonResponse);
-            if (fundWithNav == null || fundWithNav.getNav() == null) {
-                System.out.println("Failed to fetch NAV.");
-                navLabel.setText("Failed to fetch NAV.");
-                return; // Exit early if NAV fetch fails
-            }
-
-            double nav = Double.parseDouble(fundWithNav.getNav());
-            totalUnits = sipAmount / nav;
-
-            navLabel.setText(String.format("NAV: %.2f", nav));
-            totalUnitsLabel.setText(String.format("Total Units: %.2f", totalUnits));
-
-            String schemeName = fundWithNav.getSchemeName();
-
-            // Get the current user's ID
-            int userId = getCurrentUserId();
-
-            // Store SIP details and transactions with the current user's ID
-            storeSIPDetails(userId, selectedFund, sipAmount, totalUnits, startDate, endDate, frequency, schemeName);
-            storeTransactionData(selectedFund, userId, sipAmount, totalUnits, schemeName);
-
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid SIP amount entered.");
-            navLabel.setText("Invalid SIP amount.");
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Error fetching NAV data: " + e.getMessage());
-            navLabel.setText("Error fetching NAV.");
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error during SIP investment: " + e.getMessage());
-            navLabel.setText("Error during SIP investment.");
-        }
-        double finalTotalUnits = totalUnits;
-        double finalSipAmount = sipAmount;
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Buy Data");
-            alert.setHeaderText(null);
-            alert.setContentText("Successfully bought " + finalTotalUnits + "units of" + selectedFund.schemeName + "for ₹" + finalSipAmount);
-            alert.showAndWait();
-        });
-
-        // Reload SIP Management Screen after a successful operation
-        Stage stage = (Stage) navLabel.getScene().getWindow();
-        try {
-            reloadSIPManagementScreen();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
     private void reloadSIPManagementScreen() throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("SIPManagement.fxml"));
         Parent newRoot = loader.load();

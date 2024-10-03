@@ -152,7 +152,14 @@ public class MutualFundsController {
 
     // Fetch mutual funds from API and populate the table
     private void loadMutualFunds() {
-        MutualFundFetcher fetcher = new MutualFundFetcher();
+        // Provide the proxy details here
+        String proxyHost = "10.0.1.6"; // Proxy IP address
+        int proxyPort = 8030;          // Proxy port
+
+        // Initialize MutualFundFetcher with proxy details
+        MutualFundFetcher fetcher = new MutualFundFetcher(proxyHost, proxyPort);
+
+        // Fetch the data from the API
         JSONArray mutualFunds = fetcher.fetchData();
 
         if (mutualFunds != null) {
@@ -163,6 +170,7 @@ public class MutualFundsController {
                 Object schemeCodeObj = fund.get("schemeCode");
                 String schemeCode = schemeCodeObj instanceof Long ? String.valueOf(schemeCodeObj) : (String) schemeCodeObj;
 
+                // Add the data to the mutualFundData list
                 mutualFundData.add(new MutualFund(
                         schemeCode,
                         (String) fund.get("schemeName")
@@ -170,6 +178,7 @@ public class MutualFundsController {
             }
         }
 
+        // Set the data to the table view
         mutualFundTable.setItems(mutualFundData);
     }
 
@@ -226,7 +235,14 @@ public class MutualFundsController {
     @FXML
     public void fetchNAVData() {
         if (selectedFund != null) {
-            MutualFundFetcher fetcher = new MutualFundFetcher();
+            // Provide the proxy details here
+            String proxyHost = "10.0.1.6"; // Proxy IP address
+            int proxyPort = 8030;          // Proxy port
+
+            // Initialize MutualFundFetcher with proxy details
+            MutualFundFetcher fetcher = new MutualFundFetcher(proxyHost, proxyPort);
+
+            // Fetch fund data by scheme code
             JSONObject fundData = fetcher.fetchFundDataBySchemeCode(selectedFund.getSchemeCode());
 
             if (fundData != null) {
@@ -234,6 +250,7 @@ public class MutualFundsController {
                 String date = (String) data.get("date");
                 currentNav = Double.parseDouble((String) data.get("nav")); // Save NAV for later calculations
                 costperunit = currentNav;
+
                 // Show the fetched NAV and date to the user (e.g., in an alert)
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("NAV Data");
@@ -250,6 +267,7 @@ public class MutualFundsController {
             alert.showAndWait();
         }
     }
+
     // Add selected mutual fund to investment
     @FXML
     public void addToInvestment() {

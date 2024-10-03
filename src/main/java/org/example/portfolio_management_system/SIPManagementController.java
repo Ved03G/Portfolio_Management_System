@@ -19,6 +19,9 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -233,7 +236,19 @@ public class SIPManagementController {
     // Fetch the current NAV for the SIP (This method should call your API or database)
     private double fetchNavForFund(String fundId) {
         String navApiUrl = "https://api.mfapi.in/mf/" + fundId;
-        HttpClient client = HttpClient.newHttpClient();
+
+        // Define your proxy settings
+        String proxyHost = "10.0.1.6"; // Replace with your proxy host
+        int proxyPort = 8030; // Replace with your proxy port
+
+        // Create a proxy instance
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+
+        // Create an HttpClient with proxy settings
+        HttpClient client = HttpClient.newBuilder()
+                .proxy(ProxySelector.of(new InetSocketAddress(proxyHost, proxyPort))) // Set the proxy
+                .build();
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(navApiUrl))
                 .build();

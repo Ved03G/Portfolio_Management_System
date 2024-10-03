@@ -151,6 +151,12 @@ public class ReportsAnalyticsController {
         double nav = 0.0;
         String apiUrl = "https://api.mfapi.in/mf/" + fundId;
 
+        // Set proxy settings
+        System.setProperty("http.proxyHost", "10.0.1.6"); // Replace with your proxy host
+        System.setProperty("http.proxyPort", "8030"); // Replace with your proxy port
+//        System.setProperty("https.proxyHost", "your.proxy.host"); // Replace with your proxy host
+//        System.setProperty("https.proxyPort", "your_proxy_port"); // Replace with your proxy port
+
         try {
             // Create the URL connection to the API
             URL url = new URL(apiUrl);
@@ -217,6 +223,7 @@ public class ReportsAnalyticsController {
 
         return nav;
     }
+
 
     // Helper method to determine which date is closer to the target date
     private boolean isCloserDate(String targetDate, String newDate, String currentClosestDate) {
