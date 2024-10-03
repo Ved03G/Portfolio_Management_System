@@ -1,14 +1,17 @@
 package org.example.portfolio_management_system;
 
+import javafx.animation.ScaleTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.sql.*;
@@ -34,9 +37,14 @@ public class SipDataCellController {
     private SipData sipData;
 
     @FXML
+    private Button sellbtn;
+
+    @FXML
     private SIPManagementController sipman;
 
-
+    private void initialize(){
+        addHoverEffect(sellbtn);
+    }
     // Initialize the controller (Optional, if needed)
 // Set the SIP data to the cell
     public void setSipData(SipData sipData) {
@@ -260,5 +268,19 @@ public class SipDataCellController {
             e.printStackTrace();
         }
     }
+    private void addHoverEffect(Button button) {
+        ScaleTransition scaleIn = new ScaleTransition(Duration.millis(200), button);
 
+        scaleIn.setToX(1.1); // Enlarge button by 10%
+        scaleIn.setToY(1.1);
+
+
+        ScaleTransition scaleOut = new ScaleTransition(Duration.millis(200), button);
+
+        scaleOut.setToX(1.0); // Enlarge button by 10%
+        scaleOut.setToY(1.0);
+
+        button.setOnMouseEntered(e -> scaleIn.playFromStart());
+        button.setOnMouseExited(e -> scaleOut.playFromStart());
+    }
 }

@@ -2,8 +2,10 @@ package org.example.portfolio_management_system;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.animation.ScaleTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -17,6 +19,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.net.URI;
@@ -25,7 +28,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class SIPManagementController {
@@ -42,9 +47,12 @@ public class SIPManagementController {
     private Scene scene;
     private Parent root;
     @FXML
-    private Button btnPortfolio,btnSIP,btnMutualFunds,btnReports,btnTransactions,btnProfile;
+    private Button btnPortfolio,btnSIP,btnMutualFunds,btnReports,btnTransactions,btnProfile,btnStartSIP;
     @FXML
     private Label navLabel;
+
+    @FXML
+    private ProgressIndicator loadingIndicator;
 
     @FXML
     private ObservableList<SipData> sipDataList = FXCollections.observableArrayList();
@@ -176,53 +184,115 @@ public class SIPManagementController {
         addHoverEffect(btnReports);
         addHoverEffect(btnTransactions);
         addHoverEffect(btnProfile);
+        addHoverEffect(btnStartSIP);
     }
     private void addHoverEffect(Button button) {
-        button.setOnMouseEntered(e -> {
-            button.setScaleX(1.1); // Enlarge button by 10%
-            button.setScaleY(1.1);
-        });
+        ScaleTransition scaleIn = new ScaleTransition(Duration.millis(200), button);
 
-        button.setOnMouseExited(e -> {
-            button.setScaleX(1.0); // Reset to original size
-            button.setScaleY(1.0);
-        });
+        scaleIn.setToX(1.1); // Enlarge button by 10%
+        scaleIn.setToY(1.1);
+
+
+        ScaleTransition scaleOut = new ScaleTransition(Duration.millis(200), button);
+
+        scaleOut.setToX(1.0); // Enlarge button by 10%
+        scaleOut.setToY(1.0);
+
+        button.setOnMouseEntered(e -> scaleIn.playFromStart());
+        button.setOnMouseExited(e -> scaleOut.playFromStart());
     }
     private int getCurrentUserId() {
         return UserSession.getInstance().getUserId();
     }
-    // Load SIP data from the database
-    private void loadSipData() {
-        int userid=getCurrentUserId();
-        String query = "SELECT sip_id,fund_Name, frequency, start_date, end_date, sip_amount, total_units,fund_id FROM sip where user_id=?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setInt(1, userid);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                int sipId = rs.getInt("sip_id");
-                String sipName = rs.getString("fund_Name");
-                String frequency = rs.getString("frequency");
-                LocalDate startDate = rs.getDate("start_date").toLocalDate();
-                LocalDate endDate = rs.getDate("end_date").toLocalDate();
-                double investedAmount = rs.getDouble("sip_amount");
-                double totalUnits = rs.getDouble("total_units");
-                String fundId = rs.getString("fund_id");
-                double currentAmount = fetchCurrentAmount(sipName, totalUnits);
-                double returns = currentAmount - investedAmount;
-                double nav = getCurrentNavForFund(sipName);
 
-                SipData sipData = new SipData(sipId, sipName, frequency, startDate, endDate, investedAmount, totalUnits, currentAmount, returns, nav,fundId);
-                sipDataList.add(sipData);
-            }
-            originalSipDataList.setAll(sipDataList); // Store original data for filtering
-            sipListView.setItems(sipDataList);
-        } catch (SQLException e) {
-            e.printStackTrace();
+    private final Map<String, Double> navCache = new HashMap<>();
+
+    // Fetch the NAV in the background to avoid freezing the UI
+    private void fetchNavForFundAsync(String fundId, SipData sipData) {
+        if (navCache.containsKey(fundId)) {
+            sipData.setNav(navCache.get(fundId)); // Use cached value
+            return;
         }
 
-        sipListView.setItems(sipDataList);
+        Task<Double> fetchNavTask = new Task<>() {
+            @Override
+            protected Double call() {
+                return fetchNavForFund(fundId);
+            }
+        };
+
+        fetchNavTask.setOnSucceeded(event -> {
+            double nav = fetchNavTask.getValue();
+            navCache.put(fundId, nav); // Cache the NAV
+            sipData.setNav(nav);
+            sipListView.refresh(); // Refresh ListView to show updated NAV
+        });
+
+        fetchNavTask.setOnFailed(event -> {
+            System.err.println("Failed to fetch NAV: " + fetchNavTask.getException().getMessage());
+        });
+
+        new Thread(fetchNavTask).start(); // Run in a background thread
     }
+
+    // Modify loadSipData to use async NAV fetching
+// Modify loadSipData to use async NAV fetching
+    private void loadSipData() {
+        int userId = getCurrentUserId();
+        String query = "SELECT sip_id, fund_Name, frequency, start_date, end_date, sip_amount, total_units, fund_id FROM sip WHERE user_id = ?";
+
+        Task<ObservableList<SipData>> loadSipDataTask = new Task<>() {
+            @Override
+            protected ObservableList<SipData> call() throws Exception {
+                ObservableList<SipData> sipList = FXCollections.observableArrayList();
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(query)) {
+                    stmt.setInt(1, userId);
+                    ResultSet rs = stmt.executeQuery();
+                    while (rs.next()) {
+                        int sipId = rs.getInt("sip_id");
+                        String sipName = rs.getString("fund_Name");
+                        String frequency = rs.getString("frequency");
+                        LocalDate startDate = rs.getDate("start_date").toLocalDate();
+                        LocalDate endDate = rs.getDate("end_date").toLocalDate();
+                        double investedAmount = rs.getDouble("sip_amount");
+                        double totalUnits = rs.getDouble("total_units");
+                        String fundId = rs.getString("fund_id");
+                        double currentAmount = fetchCurrentAmount(sipName, totalUnits);
+                        double returns = currentAmount - investedAmount;
+
+                        SipData sipData = new SipData(sipId, sipName, frequency, startDate, endDate, investedAmount, totalUnits, currentAmount, returns, 0, fundId);
+                        fetchNavForFundAsync(fundId, sipData); // Fetch NAV asynchronously
+
+                        sipList.add(sipData);
+                    }
+                }
+                return sipList;
+            }
+        };
+
+        // Show the loading indicator while loading data
+        loadingIndicator.setVisible(true);
+
+        loadSipDataTask.setOnSucceeded(event -> {
+            sipDataList.setAll(loadSipDataTask.getValue());
+            originalSipDataList.setAll(sipDataList); // Store for filtering
+            sipListView.setItems(sipDataList);
+
+            // Hide the loading indicator when data is loaded
+            loadingIndicator.setVisible(false);
+        });
+
+        loadSipDataTask.setOnFailed(event -> {
+            System.err.println("Failed to load SIP data: " + loadSipDataTask.getException().getMessage());
+
+            // Hide the loading indicator in case of failure
+            loadingIndicator.setVisible(false);
+        });
+
+        new Thread(loadSipDataTask).start(); // Run the task in the background
+    }
+
 
     // Fetch the current amount based on total units and current NAV
     private double fetchCurrentAmount(String sipName, double totalUnits) {

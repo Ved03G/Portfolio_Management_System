@@ -177,8 +177,22 @@
          </font>
       </Label>
       <TextField fx:id="searchSchemeName" layoutX="812.0" layoutY="115.0" onKeyReleased="#onSearch" promptText="Scheme Name" />
-      <Button layoutX="899.0" layoutY="282.0" onAction="#addToInvestment" prefHeight="31.0" prefWidth="171.0" style="-fx-background-color: #CBDFBB; -fx-background-radius: 8px;" />
-      <Button layoutX="914.0" layoutY="230.0" onAction="#fetchNAVData" prefHeight="31.0" prefWidth="141.0" style="-fx-background-color: #CBDFBB; -fx-background-radius: 8px;" />
+      <Button fx:id="addbtn" layoutX="899.0" layoutY="282.0" onAction="#addToInvestment" prefHeight="31.0" prefWidth="171.0" style="-fx-background-color: #CBDFBB; -fx-background-radius: 8px;">
+         <graphic>
+            <Label text="Add to Investment">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+            </Label>
+         </graphic></Button>
+      <Button fx:id="fetchbtn" layoutX="914.0" layoutY="230.0" onAction="#fetchNAVData" prefHeight="31.0" prefWidth="141.0" style="-fx-background-color: #CBDFBB; -fx-background-radius: 8px;">
+         <graphic>
+            <Label prefHeight="27.0" prefWidth="110.0" text="Fetch NAV Data">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+            </Label>
+         </graphic></Button>
       <TableView fx:id="investmentTable" layoutX="320.0" layoutY="475.0" prefHeight="174.0" prefWidth="762.0" style="-fx-font-size: 17px; -fx-border-color: #FFFFFF;" stylesheets="@style.css">
          <columns>
             <TableColumn fx:id="schemeCodeColumn" prefWidth="127.20001220703125" text="Scheme Code">
@@ -231,22 +245,14 @@
          </font>
       </Label>
       <TextField fx:id="searchSchemeName1" layoutX="842.0" layoutY="443.0" onKeyReleased="#onInvestmentSearch" promptText="Scheme Name" />
-      <Button layoutX="840.0" layoutY="655.0" onAction="#handleSellFund" prefHeight="31.0" prefWidth="171.0" style="-fx-background-color: #CBDFBB; -fx-background-radius: 8px;" />
-      <Label layoutX="930.0" layoutY="232.0" prefHeight="27.0" prefWidth="110.0" text="Fetch NAV Data">
-         <font>
-            <Font name="System Bold" size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="923.0" layoutY="288.0" text="Add to Investment">
-         <font>
-            <Font name="System Bold" size="14.0" />
-         </font>
-      </Label>
-      <Label layoutX="895.0" layoutY="661.0" text="Sell Fund">
-         <font>
-            <Font name="System Bold" size="14.0" />
-         </font>
-      </Label>
+      <Button fx:id="sellbtn" layoutX="840.0" layoutY="655.0" onAction="#handleSellFund" prefHeight="31.0" prefWidth="171.0" style="-fx-background-color: #CBDFBB; -fx-background-radius: 8px;">
+         <graphic>
+            <Label text="Sell Fund">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+            </Label>
+         </graphic></Button>
       <Label layoutX="320.0" layoutY="72.0" prefHeight="30.0" prefWidth="146.0" style="-fx-background-color: #13121B; -fx-text-fill: #FFFFFF; -fx-font-size: 20px; -fx-background-radius: 8px;" text=" Real Time Data" textFill="WHITE" />
     </children>
 </AnchorPane>

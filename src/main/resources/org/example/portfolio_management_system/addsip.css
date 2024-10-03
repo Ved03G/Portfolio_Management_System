@@ -1,6 +1,6 @@
 
 .text-field{
-    -fx-effect: dropshadow(three-pass-box, #a5a3a3, 5, 0, 0, 7);
+    /*-fx-effect: dropshadow(three-pass-box, #a5a3a3, 5, 0, 0, 7);*/
 
 }
 

@@ -163,6 +163,7 @@
 //}
 package org.example.portfolio_management_system;
 
+import javafx.animation.ScaleTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -171,6 +172,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import javafx.scene.control.Alert.AlertType;
+import javafx.util.Duration;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -324,5 +326,21 @@ public class LoginController {
                 ShowPassword.setText("Show Password");
             }
         });
+        handlehover(btnLogin);
+    }
+    private void handlehover(Button button) {
+        ScaleTransition scaleIn = new ScaleTransition(Duration.millis(200), button);
+
+           scaleIn.setToX(1.1); // Enlarge button by 10%
+           scaleIn.setToY(1.1);
+
+
+        ScaleTransition scaleOut = new ScaleTransition(Duration.millis(200), button);
+
+        scaleOut.setToX(1.0); // Enlarge button by 10%
+        scaleOut.setToY(1.0);
+
+        button.setOnMouseEntered(e -> scaleIn.playFromStart());
+        button.setOnMouseExited(e -> scaleOut.playFromStart());
     }
 }

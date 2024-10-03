@@ -109,4 +109,10 @@
     -fx-font-weight: bold;
     -fx-background-color:  #E6F7DC;
 }
-
+.label1{
+    -fx-border-color: transparent;   /* Remove border */
+    -fx-font-size: 16px;             /* Increase font size */
+    -fx-text-fill: green;            /* Set text color to green */
+    -fx-background-radius: 0;        /* Remove background border radius */
+    -fx-background-color: transparent;
+}

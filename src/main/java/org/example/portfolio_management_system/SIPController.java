@@ -1,5 +1,7 @@
 package org.example.portfolio_management_system;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -7,6 +9,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,19 +17,23 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
+import org.example.portfolio_management_system.DatabaseConnection;
+import org.example.portfolio_management_system.UserSession;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import javafx.stage.Stage;
 
 public class SIPController {
 
@@ -57,7 +64,7 @@ public class SIPController {
         loadFrequencyOptions();
     }
 
-
+    // Check if the fund is closed based on its last recorded date
     public boolean isFundClosed(String fundId) {
         try {
             HttpClient client = HttpClient.newHttpClient();
@@ -94,43 +101,57 @@ public class SIPController {
 
     // Load mutual funds into the ObservableList
     private void loadMutualFunds() {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.mfapi.in/mf"))
-                .build();
+        // Run the data fetching in a background thread
+        Task<Void> loadFundsTask = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.mfapi.in/mf"))
+                        .build();
 
-        try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String responseBody = response.body();
+                try {
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    String responseBody = response.body();
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(responseBody);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode rootNode = objectMapper.readTree(responseBody);
 
-            for (JsonNode fundNode : rootNode) {
-                String fundId = fundNode.path("schemeCode").asText();
-                String schemeName = fundNode.path("schemeName").asText();
-                String fundType = fundNode.path("fundType").asText();
-                String category = fundNode.path("category").asText();
-                mutualFunds.add(new MutualFund(fundId, schemeName, fundType, category, ""));
+                    // Wrap ListView updates in Platform.runLater() to ensure they run on the UI thread
+                    Platform.runLater(() -> {
+                        for (JsonNode fundNode : rootNode) {
+                            String fundId = fundNode.path("schemeCode").asText();
+                            String schemeName = fundNode.path("schemeName").asText();
+                            String fundType = fundNode.path("fundType").asText();
+                            String category = fundNode.path("category").asText();
+                            mutualFunds.add(new MutualFund(fundId, schemeName, fundType, category, ""));
+                        }
+
+                        filteredMutualFunds = new FilteredList<>(mutualFunds, p -> true);
+                        fundListView.setItems(filteredMutualFunds);
+
+                        // Optionally hide ListView until needed
+                       // fundListView.setVisible(false);
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.out.println("Error loading mutual funds: " + e.getMessage());
+                }
+
+                return null;
             }
+        };
 
-            filteredMutualFunds = new FilteredList<>(mutualFunds, p -> true);
-            fundListView.setItems(filteredMutualFunds);
-
-            fundListView.setVisible(false); // Initially hide ListView
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error loading mutual funds: " + e.getMessage());
-        }
+        // Start the background task
+        new Thread(loadFundsTask).start();
     }
 
-    // Set up search filter for mutual funds
+
     // Set up search filter for mutual funds
     private void setupSearchFilter() {
         fundSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null || newValue.isEmpty()) {
-                filteredMutualFunds.setPredicate(fund -> false); // Hide ListView if search is empty
+                filteredMutualFunds.setPredicate(fund -> true); // Hide ListView if search is empty
                 fundListView.setVisible(false);
             } else {
                 filteredMutualFunds.setPredicate(fund -> fund.getSchemeName().toLowerCase().contains(newValue.toLowerCase()));
@@ -155,6 +176,7 @@ public class SIPController {
             }
         });
     }
+
     private void showNavAlert(String schemeName, String nav) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("NAV Information");
@@ -163,8 +185,20 @@ public class SIPController {
         alert.showAndWait();
     }
 
+    // Load frequency options for SIP
+    private void loadFrequencyOptions() {
+        ObservableList<String> frequencyOptions = FXCollections.observableArrayList("Monthly", "Quarterly", "Yearly");
+        frequencyChoiceBox.setItems(frequencyOptions);
+    }
 
-    private String fetchNAVForFund(String fundId) {
+    // Implement the rest of the methods for SIP investment, storing data, etc.
+    // ...
+
+
+
+
+
+private String fetchNAVForFund(String fundId) {
         try {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
@@ -186,11 +220,7 @@ public class SIPController {
 
 
 
-    // Load frequency options for SIP
-    private void loadFrequencyOptions() {
-        ObservableList<String> frequencyOptions = FXCollections.observableArrayList("Monthly", "Quarterly", "Yearly");
-        frequencyChoiceBox.setItems(frequencyOptions);
-    }
+
 
     // Handle SIP investment
     public void handleSIPInvestment() {

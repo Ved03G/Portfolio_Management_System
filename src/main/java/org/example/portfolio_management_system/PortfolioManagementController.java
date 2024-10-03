@@ -1,5 +1,6 @@
 package org.example.portfolio_management_system;
 
+import javafx.animation.ScaleTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -11,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.sql.*;
@@ -73,15 +75,19 @@ public class PortfolioManagementController {
     }
 
     private void addHoverEffect(Button button) {
-        button.setOnMouseEntered(e -> {
-            button.setScaleX(1.1); // Enlarge button by 10%
-            button.setScaleY(1.1);
-        });
+        ScaleTransition scaleIn = new ScaleTransition(Duration.millis(200), button);
 
-        button.setOnMouseExited(e -> {
-            button.setScaleX(1.0); // Reset to original size
-            button.setScaleY(1.0);
-        });
+        scaleIn.setToX(1.1); // Enlarge button by 10%
+        scaleIn.setToY(1.1);
+
+
+        ScaleTransition scaleOut = new ScaleTransition(Duration.millis(200), button);
+
+        scaleOut.setToX(1.0); // Enlarge button by 10%
+        scaleOut.setToY(1.0);
+
+        button.setOnMouseEntered(e -> scaleIn.playFromStart());
+        button.setOnMouseExited(e -> scaleOut.playFromStart());
     }
 
     private int getCurrentUserId() {

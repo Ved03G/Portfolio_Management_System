@@ -4,36 +4,53 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.zip.GZIPInputStream;
 
 public class MutualFundFetcher {
+
+    // Fetch fund data by scheme code (latest NAV)
     public JSONObject fetchFundDataBySchemeCode(String schemeCode) {
         try {
-            URL url = new URL("https://api.mfapi.in/mf/" + schemeCode);
+            URL url = new URL("https://api.mfapi.in/mf/" + schemeCode + "/latest");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
-            InputStreamReader reader = new InputStreamReader(conn.getInputStream());
+            // Enable GZIP Compression
+            conn.setRequestProperty("Accept-Encoding", "gzip");
+
+            // Use larger buffer for reading data
+            InputStreamReader reader = new InputStreamReader(new GZIPInputStream(conn.getInputStream()), "UTF-8");
+            BufferedReader bufferedReader = new BufferedReader(reader, 8192); // 8KB buffer
+
             JSONParser parser = new JSONParser();
-            return (JSONObject) parser.parse(reader);
+            return (JSONObject) parser.parse(bufferedReader);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
-    // Fetch API Data
+
+    // Fetch all mutual fund data
     public JSONArray fetchData() {
         try {
             URL url = new URL("https://api.mfapi.in/mf");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
-            InputStreamReader reader = new InputStreamReader(conn.getInputStream());
+            // Enable GZIP Compression
+            conn.setRequestProperty("Accept-Encoding", "gzip");
+
+            // Use larger buffer for reading data
+            InputStreamReader reader = new InputStreamReader(new GZIPInputStream(conn.getInputStream()), "UTF-8");
+            BufferedReader bufferedReader = new BufferedReader(reader, 8192); // 8KB buffer
+
             JSONParser parser = new JSONParser();
-            return (JSONArray) parser.parse(reader);
+            return (JSONArray) parser.parse(bufferedReader);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -41,7 +58,7 @@ public class MutualFundFetcher {
         return null;
     }
 
-    // Display Data in Your Application
+    // Display mutual fund data in application
     public void displayFundsInApplication() {
         JSONArray mutualFunds = fetchData();
         if (mutualFunds != null) {

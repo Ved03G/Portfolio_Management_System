@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="177.0" prefWidth="663.0" styleClass="cell_container" stylesheets="@sipdatacell.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.SipDataCellController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="177.0" prefWidth="663.0" styleClass="cell_container" stylesheets="@sipdatacell.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.SipDataCellController">
    <children>
       <Label fx:id="sipNameLabel" layoutX="23.0" layoutY="5.0" prefHeight="18.0" prefWidth="339.0" styleClass="trans_pAddress_lbl1" text="Sip Name" />
       <Label layoutX="23.0" layoutY="45.0" styleClass="trans_date_lbl" text="Frequency:" />
@@ -26,6 +25,13 @@
          <font>
             <Font size="18.0" />
          </font></Label>
-      <Button layoutX="607.0" layoutY="78.0" mnemonicParsing="false" onAction="#handlesell" prefHeight="35.0" prefWidth="46.0" styleClass="button4" text="sell" />
+      <Button fx:id="sellbtn" layoutX="593.0" layoutY="76.0" mnemonicParsing="false" onAction="#handlesell" prefHeight="27.0" prefWidth="44.0" styleClass="button4">
+         <graphic>
+            <Text fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="Sell" wrappingWidth="46.399999999999864">
+               <font>
+                  <Font name="System Bold" size="16.0" />
+               </font>
+            </Text>
+         </graphic></Button>
    </children>
 </AnchorPane>

@@ -60,6 +60,10 @@ public class RegisterController {
             showAlert(Alert.AlertType.ERROR, "Input Error", "All fields are required.");
             return;
         }
+        if (!validatePhoneNumber(phone_number)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Phone Number", "Phone number must be exactly 10 digits and contain only numbers.");
+            return;
+        }
         // Input validation
         if (!validatePassword(password)) {
             showAlert(Alert.AlertType.ERROR, "Weak Password", "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
@@ -96,7 +100,12 @@ public class RegisterController {
     }
 
 
-
+    private boolean validatePhoneNumber(String phoneNumber) {
+        // Check if the phone number is exactly 10 digits and contains only numbers
+        String phoneRegex = "\\d{10}";
+        Pattern pattern = Pattern.compile(phoneRegex);
+        return pattern.matcher(phoneNumber).matches();
+    }
     // Method to toggle visibility of the password field
     @FXML
     private void togglePasswordVisibility(ActionEvent event) {

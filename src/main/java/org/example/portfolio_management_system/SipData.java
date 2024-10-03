@@ -12,7 +12,7 @@ public class SipData {
     private final double totalUnits;
     private final double currentAmount;
     private final double returns;
-    private final double nav;
+    private double nav;
     private final int sip_id;
     private String fundId;
 
@@ -77,5 +77,10 @@ public class SipData {
 
     public String getFundId() {
         return fundId;
+    }
+
+
+    public void setNav(double nav) {
+        this.nav = nav;
     }
 }

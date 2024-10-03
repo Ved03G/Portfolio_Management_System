@@ -77,3 +77,11 @@
 .button4:hover {
     -fx-background-color: #8e1e1e;
 }
+
+.text2 {
+    -fx-font-family: 'Manrope'; /* Body font */
+    -fx-font-size: 12px;
+    -fx-font-weight: 400;
+    -fx-line-height: 20px;
+    -fx-text-fill: #67945CFF;
+}
