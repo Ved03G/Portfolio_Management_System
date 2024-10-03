@@ -21,7 +21,10 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -32,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.zip.GZIPInputStream;
 
 public class SIPManagementController {
 
@@ -301,19 +305,40 @@ public class SIPManagementController {
     }
 
     // Fetch the current NAV for the SIP (This method should call your API or database)
+// Fetch the current NAV for the SIP (This method should call your API or database)
     private double fetchNavForFund(String fundId) {
         String navApiUrl = "https://api.mfapi.in/mf/" + fundId;
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(navApiUrl))
+                .header("Accept-Encoding", "gzip") // Request GZIP-encoded responses
                 .build();
 
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String jsonResponse = response.body();
+            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
+            InputStream responseStream;
+            String contentEncoding = response.headers().firstValue("Content-Encoding").orElse("");
+
+            // Check if the response is GZIP encoded
+            if ("gzip".equalsIgnoreCase(contentEncoding)) {
+                responseStream = new GZIPInputStream(response.body());
+            } else {
+                responseStream = response.body();
+            }
+
+            // Use BufferedReader with a 16KB buffer
+            BufferedReader reader = new BufferedReader(new InputStreamReader(responseStream), 16384);
+            StringBuilder jsonResponse = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                jsonResponse.append(line);
+            }
+
+            // Parse the JSON response to extract NAV
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(jsonResponse);
+            JsonNode rootNode = objectMapper.readTree(jsonResponse.toString());
             JsonNode navNode = rootNode.path("data").get(0).path("nav");
 
             return navNode.asDouble();
@@ -323,6 +348,7 @@ public class SIPManagementController {
 
         return 0.0;
     }
+
 
     // Fetch fund ID from fund name
     private String getFundIdFromName(String fundName) {

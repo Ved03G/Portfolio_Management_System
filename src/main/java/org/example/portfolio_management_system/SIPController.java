@@ -21,11 +21,15 @@ import javafx.stage.Stage;
 import org.example.portfolio_management_system.DatabaseConnection;
 import org.example.portfolio_management_system.UserSession;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,6 +37,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.zip.GZIPInputStream;
 
 
 public class SIPController {
@@ -209,23 +214,43 @@ public class SIPController {
 
 
 private String fetchNAVForFund(String fundId) {
-        try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.mfapi.in/mf/" + fundId))
-                    .build();
+    try {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.mfapi.in/mf/" + fundId))
+                .header("Accept-Encoding", "gzip")  // Request GZIP compression
+                .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String jsonResponse = response.body();
+        HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
-            MutualFund fundWithNav = parseFundDetails(jsonResponse);
-            if (fundWithNav != null) {
-                return fundWithNav.getNav();  // Return the NAV if available
-            }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+        InputStream responseBody = response.body();
+
+        // If response is GZIP compressed, wrap it with GZIPInputStream
+        if ("gzip".equals(response.headers().firstValue("Content-Encoding").orElse(""))) {
+            responseBody = new GZIPInputStream(responseBody);
         }
-        return null;  // Return null if NAV couldn't be fetched
+
+        // Set up a 16KB buffer for reading the response
+        BufferedReader reader = new BufferedReader(new InputStreamReader(responseBody, StandardCharsets.UTF_8), 16 * 1024);
+
+        StringBuilder result = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            result.append(line);
+        }
+
+        String jsonResponse = result.toString();
+
+        MutualFund fundWithNav = parseFundDetails(jsonResponse);
+        if (fundWithNav != null) {
+            return fundWithNav.getNav();  // Return the NAV if available
+        }
+
+    } catch (IOException | InterruptedException e) {
+        e.printStackTrace();
+    }
+
+    return null;
     }
 
 

@@ -17,10 +17,7 @@ import javafx.util.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.*;
@@ -28,6 +25,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 public class ReportsAnalyticsController {
 
@@ -54,7 +52,6 @@ public class ReportsAnalyticsController {
 
     @FXML
     public void initialize() {
-
         // Initialize PieChart data
         populatePieChart();
 
@@ -127,6 +124,7 @@ public class ReportsAnalyticsController {
     }
 
     // Fetch NAV data for a range of dates
+// Fetch NAV data for a range of dates with GZIP and 8KB buffer
     public Map<String, Double> getNavForDateRange(String fundId, LocalDate startDate, LocalDate endDate) {
         Map<String, Double> navMap = new HashMap<>();
         String apiUrl = "https://api.mfapi.in/mf/" + fundId;
@@ -137,14 +135,28 @@ public class ReportsAnalyticsController {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
+            // Set request headers to accept GZIP responses
+            connection.setRequestProperty("Accept-Encoding", "gzip");
+
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String inputLine;
+                InputStream inputStream;
 
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
+                // Check if the response is GZIP-compressed
+                String contentEncoding = connection.getContentEncoding();
+                if (contentEncoding != null && contentEncoding.equals("gzip")) {
+                    inputStream = new GZIPInputStream(connection.getInputStream());
+                } else {
+                    inputStream = connection.getInputStream();
+                }
+
+                // Read response using 8KB buffer
+                BufferedReader in = new BufferedReader(new InputStreamReader(inputStream), 32768); // 32KB buffer
+                StringBuilder response = new StringBuilder();
+                char[] buffer = new char[32768]; // 8KB character buffer
+                int charsRead;
+                while ((charsRead = in.read(buffer)) != -1) {
+                    response.append(buffer, 0, charsRead);
                 }
                 in.close();
 
@@ -173,6 +185,7 @@ public class ReportsAnalyticsController {
 
         return navMap;
     }
+
 
     // Fetch data from the database and populate the PieChart
     private void populatePieChart() {
@@ -209,11 +222,24 @@ public class ReportsAnalyticsController {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
+            // Enable GZIP compression
+            connection.setRequestProperty("Accept-Encoding", "gzip");
+
             // Check for a valid response code from the API
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                // Get the response from the API
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                // Detect if the response is compressed
+                InputStream inputStream;
+                String encoding = connection.getContentEncoding();
+
+                if ("gzip".equalsIgnoreCase(encoding)) {
+                    inputStream = new GZIPInputStream(connection.getInputStream());
+                } else {
+                    inputStream = connection.getInputStream();
+                }
+
+                // Read the response using an 8KB buffer
+                BufferedReader in = new BufferedReader(new InputStreamReader(inputStream), 32768); // 8KB buffer
                 StringBuilder response = new StringBuilder();
                 String inputLine;
 
@@ -269,6 +295,7 @@ public class ReportsAnalyticsController {
 
         return nav;
     }
+
 
     // Helper method to determine which date is closer to the target date
     private boolean isCloserDate(String targetDate, String newDate, String currentClosestDate) {

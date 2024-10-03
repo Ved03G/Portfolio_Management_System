@@ -24,7 +24,7 @@ public class MutualFundFetcher {
 
             // Use larger buffer for reading data
             InputStreamReader reader = new InputStreamReader(new GZIPInputStream(conn.getInputStream()), "UTF-8");
-            BufferedReader bufferedReader = new BufferedReader(reader, 8192); // 8KB buffer
+            BufferedReader bufferedReader = new BufferedReader(reader, 16384); // 8KB buffer
 
             JSONParser parser = new JSONParser();
             return (JSONObject) parser.parse(bufferedReader);
