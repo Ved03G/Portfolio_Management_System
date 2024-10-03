@@ -9,7 +9,7 @@
     -fx-font-family: "Times New Roman";
 }
 .choice-box{
-    -fx-effect: dropshadow(three-pass-box, #a5a3a3, 5, 0, 0, 7);
+    /*-fx-effect: dropshadow(three-pass-box, #a5a3a3, 5, 0, 0, 7);*/
 }
 .button1{
     -fx-background-color: #03e403;

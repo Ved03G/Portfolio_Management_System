@@ -54,6 +54,9 @@ public class SIPController {
     @FXML
     private Label totalUnitsLabel;
 
+    @FXML
+    private ProgressIndicator loadingIndicator;
+
     private ObservableList<MutualFund> mutualFunds = FXCollections.observableArrayList();
     private FilteredList<MutualFund> filteredMutualFunds;
 
@@ -101,7 +104,9 @@ public class SIPController {
 
     // Load mutual funds into the ObservableList
     private void loadMutualFunds() {
-        // Run the data fetching in a background thread
+        // Show the loading indicator before starting the task
+        loadingIndicator.setVisible(true);
+
         Task<Void> loadFundsTask = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
@@ -117,7 +122,6 @@ public class SIPController {
                     ObjectMapper objectMapper = new ObjectMapper();
                     JsonNode rootNode = objectMapper.readTree(responseBody);
 
-                    // Wrap ListView updates in Platform.runLater() to ensure they run on the UI thread
                     Platform.runLater(() -> {
                         for (JsonNode fundNode : rootNode) {
                             String fundId = fundNode.path("schemeCode").asText();
@@ -130,12 +134,18 @@ public class SIPController {
                         filteredMutualFunds = new FilteredList<>(mutualFunds, p -> true);
                         fundListView.setItems(filteredMutualFunds);
 
-                        // Optionally hide ListView until needed
-                       // fundListView.setVisible(false);
+                        // Keep ListView visible at all times
+                        fundListView.setVisible(true);
+
+                        // Hide the loading indicator once the data is loaded
+                        loadingIndicator.setVisible(false);
                     });
                 } catch (Exception e) {
                     e.printStackTrace();
-                    System.out.println("Error loading mutual funds: " + e.getMessage());
+                    Platform.runLater(() -> {
+                        loadingIndicator.setVisible(false);
+                        System.out.println("Error loading mutual funds: " + e.getMessage());
+                    });
                 }
 
                 return null;

@@ -1,6 +1,7 @@
 package org.example.portfolio_management_system;
 
 import javafx.animation.ScaleTransition;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -9,6 +10,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.json.JSONArray;
@@ -23,10 +26,8 @@ import java.net.URL;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 public class ReportsAnalyticsController {
 
@@ -53,8 +54,9 @@ public class ReportsAnalyticsController {
 
     @FXML
     public void initialize() {
+
         // Initialize PieChart data
-     populatePieChart();
+        populatePieChart();
 
         // Call to show the line chart
         List<String> fundIds = getFundIdsFromDatabase();
@@ -66,6 +68,7 @@ public class ReportsAnalyticsController {
         // Fetch and display the daily current values
         showDailyCurrentValueChart(lineChart, fundIds, startDate, endDate);
         showDailyCurrentValueChartForMutualFunds(mutualFundLineChart, fundIds, startDate, endDate);
+
         // Add hover effects to buttons
         addHoverEffect(btnPortfolio);
         addHoverEffect(btnSIP);
@@ -74,16 +77,16 @@ public class ReportsAnalyticsController {
         addHoverEffect(btnTransactions);
         addHoverEffect(btnProfile);
     }
+
     private void addHoverEffect(Button button) {
         ScaleTransition scaleIn = new ScaleTransition(Duration.millis(200), button);
 
         scaleIn.setToX(1.1); // Enlarge button by 10%
         scaleIn.setToY(1.1);
 
-
         ScaleTransition scaleOut = new ScaleTransition(Duration.millis(200), button);
 
-        scaleOut.setToX(1.0); // Enlarge button by 10%
+        scaleOut.setToX(1.0); // Reset to original size
         scaleOut.setToY(1.0);
 
         button.setOnMouseEntered(e -> scaleIn.playFromStart());
@@ -123,9 +126,55 @@ public class ReportsAnalyticsController {
         return new ArrayList<>(fundIds);
     }
 
+    // Fetch NAV data for a range of dates
+    public Map<String, Double> getNavForDateRange(String fundId, LocalDate startDate, LocalDate endDate) {
+        Map<String, Double> navMap = new HashMap<>();
+        String apiUrl = "https://api.mfapi.in/mf/" + fundId;
+
+        try {
+            // Fetch API response
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String inputLine;
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                // Parse JSON response
+                JSONObject jsonResponse = new JSONObject(response.toString());
+                JSONArray data = jsonResponse.getJSONArray("data");
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+                // Iterate through the data array and store NAV values within the date range
+                for (int i = 0; i < data.length(); i++) {
+                    JSONObject entry = data.getJSONObject(i);
+                    String navDateStr = entry.getString("date");
+                    LocalDate navDate = LocalDate.parse(navDateStr, formatter);
+                    if (!navDate.isBefore(startDate) && !navDate.isAfter(endDate)) {
+                        double nav = entry.getDouble("nav");
+                        navMap.put(navDateStr, nav);
+                    }
+                }
+            } else {
+                System.out.println("Error: Received HTTP response code " + responseCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return navMap;
+    }
 
     // Fetch data from the database and populate the PieChart
-    // Method to populate the PieChart with data from the portfolio table (SIP and Mutual Funds combined)
     private void populatePieChart() {
         portfolioPieChart.getData().clear(); // Clear existing data from the PieChart
         int userId = UserSession.getInstance().getUserId(); // Get the user ID from the session
@@ -149,10 +198,7 @@ public class ReportsAnalyticsController {
         }
     }
 
-
-
     // Fetch NAV for a specific date from the API
-    // Fetch NAV for a specific date from the API, or get the closest available NAV
     public double getNavForDate(String fundId, String date) {
         double nav = 0.0;
         String apiUrl = "https://api.mfapi.in/mf/" + fundId;
@@ -230,69 +276,68 @@ public class ReportsAnalyticsController {
 
         // Parse the dates
         LocalDate target = LocalDate.parse(targetDate, formatter);
-        LocalDate newLocalDate = LocalDate.parse(newDate, formatter);
-        LocalDate closestLocalDate = LocalDate.parse(currentClosestDate, formatter);
+        LocalDate newDateParsed = LocalDate.parse(newDate, formatter);
+        LocalDate currentClosest = LocalDate.parse(currentClosestDate, formatter);
 
-        // Return true if the new date is closer to the target date than the current closest date
-        return Math.abs(target.toEpochDay() - newLocalDate.toEpochDay()) < Math.abs(target.toEpochDay() - closestLocalDate.toEpochDay());
+        // Compare the absolute difference in days between the dates
+        long newDiff = Math.abs(ChronoUnit.DAYS.between(target, newDateParsed));
+        long currentDiff = Math.abs(ChronoUnit.DAYS.between(target, currentClosest));
+
+        return newDiff < currentDiff;
     }
 
-
-    // Method to populate the current value line chart
-    // Method to populate the current value and invested value line chart for SIPs
+    // Show daily current value chart for specific mutual funds
     public void showDailyCurrentValueChart(LineChart<String, Number> lineChart, List<String> fundIds, LocalDate startDate, LocalDate endDate) {
         lineChart.getData().clear();
 
-        // Series for total current value
         XYChart.Series<String, Number> totalValueSeries = new XYChart.Series<>();
         totalValueSeries.setName("Total Current Value (SIPs)");
 
-        // Series for total invested value
         XYChart.Series<String, Number> investedValueSeries = new XYChart.Series<>();
         investedValueSeries.setName("Total Invested Value (SIPs)");
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-        // Iterate through each date from startDate to endDate
+        // Fetch NAVs for all dates at once
+        Map<String, Map<String, Double>> allNavs = new HashMap<>();
+        for (String fundId : fundIds) {
+            Map<String, Double> navs = getNavForDateRange(fundId, startDate, endDate);
+            allNavs.put(fundId, navs);
+        }
+
+        // Loop through each date and populate data
         for (LocalDate currentDate = startDate; !currentDate.isAfter(endDate); currentDate = currentDate.plusDays(1)) {
             double totalCurrentValue = 0.0;
             double totalInvestedValue = 0.0;
             boolean hasInvestment = false;
 
-            // Check each fund ID
+            String currentDateString = currentDate.format(formatter);
+
             for (String fundId : fundIds) {
-                // Get invested amount and total units for the current fund from SIPs
                 double investedAmountSIP = getInvestedAmountForFund(fundId);
                 double totalUnitsSIP = getTotalUnitsInvestedForFund(fundId);
 
-                // Fetch the NAV for the current date for SIP
-                double navSIP = getNavForDate(fundId, currentDate.format(formatter));
+                // Retrieve NAV for current date
+                double navSIP = allNavs.getOrDefault(fundId, new HashMap<>()).getOrDefault(currentDateString, 0.0);
 
-                // Only consider SIP fund if it was purchased on or before the current date
                 if (isFundPurchasedOnOrBefore(fundId, currentDate) && totalUnitsSIP > 0) {
-                    if (navSIP != 0.0) {
-                        double currentValueSIP = navSIP * totalUnitsSIP;
-                        totalCurrentValue += currentValueSIP;
-                    } else {
-                        totalCurrentValue += investedAmountSIP; // Use invested amount if NAV is 0
-                    }
-                    totalInvestedValue += investedAmountSIP; // Track invested amount
-                    hasInvestment = true; // At least one SIP investment exists for the day
+                    totalCurrentValue += (navSIP != 0.0) ? navSIP * totalUnitsSIP : investedAmountSIP;
+                    totalInvestedValue += investedAmountSIP;
+                    hasInvestment = true;
                 }
             }
 
-            // Add data to the chart only if there was an investment on that day
             if (hasInvestment) {
-                totalValueSeries.getData().add(new XYChart.Data<>(currentDate.format(formatter), totalCurrentValue));
-                investedValueSeries.getData().add(new XYChart.Data<>(currentDate.format(formatter), totalInvestedValue));
+                totalValueSeries.getData().add(new XYChart.Data<>(currentDateString, totalCurrentValue));
+                investedValueSeries.getData().add(new XYChart.Data<>(currentDateString, totalInvestedValue));
             }
         }
 
-        // Add both series to the line chart
-        lineChart.getData().add(totalValueSeries);
-        lineChart.getData().add(investedValueSeries);
+        lineChart.getData().addAll(totalValueSeries, investedValueSeries);
     }
 
+
+    // Method to populate the current value and invested value line chart for Mutual Funds
     // Method to populate the current value and invested value line chart for Mutual Funds
     public void showDailyCurrentValueChartForMutualFunds(LineChart<String, Number> lineChart, List<String> fundIds, LocalDate startDate, LocalDate endDate) {
         lineChart.getData().clear();
@@ -345,7 +390,9 @@ public class ReportsAnalyticsController {
     }
 
 
-    // Method to check if the fund was purchased on or before a given date
+
+
+        // Method to check if the fund was purchased on or before a given date
     private boolean isFundPurchasedOnOrBefore(String fundId, LocalDate date) {
         boolean purchased = false;
         int userId = UserSession.getInstance().getUserId();
