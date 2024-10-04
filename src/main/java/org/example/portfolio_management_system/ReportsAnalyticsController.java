@@ -5,12 +5,14 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -564,13 +566,111 @@ public class ReportsAnalyticsController {
         switchToPage(event, "SIPManagement.fxml", "SIP Management");
     }
 
+
+
     public void handlemutualfundclick(ActionEvent event) throws IOException {
-        switchToPage(event, "MutualFunds.fxml", "Mutual Funds");
+        // Get the current stage and scene
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        Scene currentScene = stage.getScene();
+        Parent currentRoot = currentScene.getRoot();
+
+        // Create a StackPane to hold the current content and the ProgressIndicator
+        StackPane stackPane = new StackPane();
+        stackPane.getChildren().add(currentRoot);
+
+        // Create the ProgressIndicator and add it to the StackPane
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setMaxSize(100, 100);  // Set size if needed
+        stackPane.getChildren().add(progressIndicator);
+        StackPane.setAlignment(progressIndicator, Pos.CENTER);  // Center the ProgressIndicator
+
+        // Replace the current root with the StackPane (which includes the loading indicator)
+        currentScene.setRoot(stackPane);
+
+        // Run the loading process in a background thread using Task
+        Task<Parent> loadTask = new Task<Parent>() {
+            @Override
+            protected Parent call() throws Exception {
+                // Load the MutualFunds.fxml file (this happens in the background thread)
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("MutualFunds.fxml"));
+                return loader.load();
+            }
+        };
+
+        // After the loading is done, switch to the MutualFunds.fxml content
+        loadTask.setOnSucceeded(workerStateEvent -> {
+            try {
+                Parent root = loadTask.getValue();  // Get the loaded FXML root
+                currentScene.setRoot(root);  // Replace the current root with the new one
+                stage.setTitle("Mutual Funds");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Handle any exceptions that occur during loading
+        loadTask.setOnFailed(workerStateEvent -> {
+            Throwable exception = loadTask.getException();
+            exception.printStackTrace();  // Handle the exception (log it or show an error)
+        });
+
+        // Start the background thread to load the FXML
+        new Thread(loadTask).start();
     }
 
+
+
+
     public void handlereportsclick(ActionEvent event) throws IOException {
-        switchToPage(event, "ReportsAnalytics.fxml", "Reports & Analytics");
+        // Get the current stage and root
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        Scene currentScene = stage.getScene();
+        Parent currentRoot = currentScene.getRoot();
+
+        // Create a StackPane to hold the current content and the ProgressIndicator
+        StackPane stackPane = new StackPane();
+        stackPane.getChildren().add(currentRoot);
+
+        // Create the ProgressIndicator and add it to the StackPane
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setMaxSize(100, 100);  // Set size if needed
+        stackPane.getChildren().add(progressIndicator);
+        StackPane.setAlignment(progressIndicator, Pos.CENTER);  // Center the ProgressIndicator
+
+        // Replace the current root with the StackPane (which includes the loading indicator)
+        currentScene.setRoot(stackPane);
+
+        // Run the loading process in a background thread using Task
+        Task<Parent> loadTask = new Task<Parent>() {
+            @Override
+            protected Parent call() throws Exception {
+                // Load the FXML file (this happens in the background thread)
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("ReportsAnalytics.fxml"));
+                return loader.load();
+            }
+        };
+
+        // After the loading is done, switch to the ReportsAnalytics.fxml content
+        loadTask.setOnSucceeded(workerStateEvent -> {
+            try {
+                Parent root = loadTask.getValue();  // Get the loaded FXML root
+                currentScene.setRoot(root);  // Replace the current root with the new one
+                stage.setTitle("Reports & Analytics");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Handle any exceptions that occur during loading
+        loadTask.setOnFailed(workerStateEvent -> {
+            Throwable exception = loadTask.getException();
+            exception.printStackTrace();  // Handle the exception (log it or show an error)
+        });
+
+        // Start the background thread to load the FXML
+        new Thread(loadTask).start();
     }
+
 
     public void handletransactionclick(ActionEvent event) throws IOException {
         switchToPage(event, "TransactionHistory.fxml", "Transaction History");
