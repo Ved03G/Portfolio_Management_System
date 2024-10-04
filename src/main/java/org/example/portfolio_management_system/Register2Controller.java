@@ -61,7 +61,7 @@ public class Register2Controller {
         }
 
         // Show success alert and redirect to the login page
-        showAlert(Alert.AlertType.INFORMATION, "Registration Success", "User registered successfully");
+        showAlert(Alert.AlertType.INFORMATION, "Registration Success", "Registration Successful");
         try {
             // Load the Login FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Login.fxml"));
