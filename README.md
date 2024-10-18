@@ -22,4 +22,4 @@ To set up the project locally, follow these steps:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Ved03G/PortfolioManagement_Desktop_App.git
+   git clone https://github.com/Ved03G/Portfolio_Management_System.git
