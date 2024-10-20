@@ -164,12 +164,14 @@
 package org.example.portfolio_management_system;
 
 import javafx.animation.ScaleTransition;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.scene.control.Alert.AlertType;
 import javafx.util.Duration;
@@ -257,18 +259,46 @@ public class LoginController {
     // Method to load the Client Dashboard page after successful login
     private void loadClientDashboard() {
         try {
-            // Load the Client Dashboard FXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("PortfolioManagement.fxml"));
-            Parent root = loader.load();
+            // Create a ProgressIndicator and display it during the loading process
+            ProgressIndicator progressIndicator = new ProgressIndicator();
+            StackPane loadingPane = new StackPane(progressIndicator);
 
-            // Get the current stage and set the scene to Client Dashboard
+            // Get the current stage and show the progress indicator
             Stage stage = (Stage) btnLogin.getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.setTitle("Dashboard");
+            Scene loadingScene = new Scene(loadingPane, 1100, 700);
+            stage.setScene(loadingScene);
             stage.show();
 
-        } catch (IOException e) {
+            // Create a task to load the Client Dashboard in the background
+            Task<Parent> loadDashboardTask = new Task<>() {
+                @Override
+                protected Parent call() throws IOException {
+                    // Load the Client Dashboard FXML
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("PortfolioManagement.fxml"));
+                    return loader.load();
+                }
+            };
+
+            // Set the dashboard scene once the loading is complete
+            loadDashboardTask.setOnSucceeded(workerStateEvent -> {
+                Parent root = loadDashboardTask.getValue();
+                Scene dashboardScene = new Scene(root);
+                stage.setScene(dashboardScene);
+                stage.setTitle("Dashboard");
+                stage.show();
+            });
+
+            // Handle loading errors
+            loadDashboardTask.setOnFailed(workerStateEvent -> {
+                Throwable exception = loadDashboardTask.getException();
+                exception.printStackTrace();
+                // Optionally, you can show an error message or dialog to the user
+            });
+
+            // Start the task in a separate thread
+            new Thread(loadDashboardTask).start();
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

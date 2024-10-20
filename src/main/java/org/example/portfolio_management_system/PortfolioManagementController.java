@@ -17,9 +17,16 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.*;
+import java.util.zip.GZIPInputStream;
 
 import static org.example.portfolio_management_system.DatabaseConnection.getConnection;
 
@@ -102,30 +109,48 @@ public class PortfolioManagementController {
         try {
             Connection connection = getConnection();
 
-            // SQL query to sum the amount_invested and current_value for the particular user
-            String query = "SELECT SUM(amount_invested) as totalamount, SUM(current_value) as currenttotal FROM portfolio WHERE user_id = ?";
+            // SQL query to fetch scheme_code, amount_invested, and units for the user
+            String query = "SELECT scheme_code, SUM(amount_invested) as totalamount, SUM(units) as totalunits FROM portfolio WHERE user_id = ? GROUP BY scheme_code";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, userId);
-            calculateGains(userId);
-            // Execute the query and fetch the summed results
+
+            // Execute the query and fetch the result
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            if (resultSet.next()) {
+            double totalAmountInvested = 0;
+            double totalCurrentValue = 0;
+
+            // Iterate through the result set and fetch current value from API for each scheme
+            while (resultSet.next()) {
+                String schemeCode = resultSet.getString("scheme_code");
                 double amountInvested = resultSet.getDouble("totalamount");
-                double currentValue = resultSet.getDouble("currenttotal");
+                double totalUnits = resultSet.getDouble("totalunits");
 
-                // Formatting the amounts to 4 decimal places
-                String formattedAmountInvested = String.format("%.4f", amountInvested);
-                String formattedCurrentValue = String.format("%.4f", currentValue);
+                // Fetch the current NAV from the API using the schemeCode
+                double currentNAV = fetchNAVFromAPI(schemeCode);
 
-                // Convert the formatted strings back to double (if required)
-                double roundedCurrentValue = Double.parseDouble(formattedCurrentValue);
-                double roundedAmountInvested = Double.parseDouble(formattedAmountInvested);
+                // Calculate the current value for this scheme
+                double currentValue = totalUnits * currentNAV;
 
-                // Set the values to the respective text areas
-                amountInvestedTextArea.setText(String.valueOf(roundedAmountInvested));
-                currentValueTextArea.setText(String.valueOf(roundedCurrentValue));
+                // Sum up the total invested and current values
+                totalAmountInvested += amountInvested;
+                totalCurrentValue += currentValue;
             }
+
+            // Formatting the amounts to 4 decimal places
+            String formattedAmountInvested = String.format("%.4f", totalAmountInvested);
+            String formattedCurrentValue = String.format("%.4f", totalCurrentValue);
+
+            // Convert the formatted strings back to double (if required)
+            double roundedCurrentValue = Double.parseDouble(formattedCurrentValue);
+            double roundedAmountInvested = Double.parseDouble(formattedAmountInvested);
+
+            // Set the values to the respective text areas
+            amountInvestedTextArea.setText(String.valueOf(roundedAmountInvested));
+            currentValueTextArea.setText(String.valueOf(roundedCurrentValue));
+
+            // Calculate gains (call the method to display gains)
+            calculateGains(userId);
 
             // Close the resources
             resultSet.close();
@@ -136,43 +161,103 @@ public class PortfolioManagementController {
             e.printStackTrace();
         }
     }
+    private double fetchNAVFromAPI(String schemeCode) {
+        double nav = 0;
+        try {
+            // API endpoint with the schemeCode
+            String apiUrl = "https://api.mfapi.in/mf/" + schemeCode;
+
+            // Create a connection to the API
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            // Request GZIP compressed content
+            connection.setRequestProperty("Accept-Encoding", "gzip");
+
+            // Check if the response is GZIP compressed
+            InputStream inputStream;
+            if ("gzip".equalsIgnoreCase(connection.getContentEncoding())) {
+                inputStream = new GZIPInputStream(connection.getInputStream());
+            } else {
+                inputStream = connection.getInputStream();
+            }
+
+            // Use a buffered reader with a 16KB buffer
+            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream), 16 * 1024);
+            String inputLine;
+            StringBuilder content = new StringBuilder();
+
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine);
+            }
+
+            // Close the connections
+            in.close();
+            connection.disconnect();
+
+            // Parse the JSON response to get the NAV value
+            JSONObject jsonResponse = new JSONObject(content.toString());
+            nav = jsonResponse.getJSONArray("data").getJSONObject(0).getDouble("nav"); // Assuming 'nav' is the field
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return nav;
+    }
 
 
-    public void calculateGains(int user_id) {
+    public void calculateGains(int userId) {
         double totalGain = 0.0;
         double totalAmountInvested = 0.0;
+        double totalCurrentValue = 0.0;
 
         try {
             Connection connection = getConnection();
 
-            // Query to sum the total amount invested and current value for the user
-            String query = "SELECT SUM(amount_invested) AS totalAmountInvested, SUM(current_value) AS totalCurrentValue " +
-                    "FROM portfolio WHERE user_id = ?";
+            // SQL query to fetch scheme_code, amount_invested, and units for the user
+            String query = "SELECT scheme_code, SUM(amount_invested) as totalamount, SUM(units) as totalunits " +
+                    "FROM portfolio WHERE user_id = ? GROUP BY scheme_code";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, user_id);
+            preparedStatement.setInt(1, userId);
+
+            // Execute the query and fetch the result
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            if (resultSet.next()) {
-                totalAmountInvested = resultSet.getDouble("totalAmountInvested");
-                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
+            // Loop through all rows to fetch the current NAV from the API for each scheme_code
+            while (resultSet.next()) {
+                String schemeCode = resultSet.getString("scheme_code");
+                double amountInvested = resultSet.getDouble("totalamount");
+                double totalUnits = resultSet.getDouble("totalunits");
 
-                // Calculate total gain
-                totalGain = totalCurrentValue - totalAmountInvested;
+                // Fetch the current NAV from the API for this scheme_code
+                double currentNAV = fetchNAVFromAPI(schemeCode);
 
-                // Calculate gain percentage if amount invested is not zero
-                if (totalAmountInvested != 0) {
-                    double totalGainPercentage = (totalGain / totalAmountInvested) * 100;
-                    totalGainLabel.setText(String.format("       %.5f%%", totalGainPercentage));
-                } else {
-                    totalGainLabel.setText("         N/A");
-                }
+                // Calculate the current value for this investment
+                double currentValue = totalUnits * currentNAV;
 
-                // Display unrealized gain
-                if (totalAmountInvested != 0) {
-                    unrealizedGainLabel.setText(String.format("       %.5f", totalGain));
-                } else {
-                    unrealizedGainLabel.setText("        N/A");
-                }
+                // Add to the total amount invested and total current value
+                totalAmountInvested += amountInvested;
+                totalCurrentValue += currentValue;
+            }
+
+            // Calculate total gain
+            totalGain = totalCurrentValue - totalAmountInvested;
+
+            // Update the gain percentage if the amount invested is not zero
+            if (totalAmountInvested != 0) {
+                double totalGainPercentage = (totalGain / totalAmountInvested) * 100;
+                totalGainLabel.setText(String.format("       %.5f%%", totalGainPercentage));
+            } else {
+                totalGainLabel.setText("         N/A");
+            }
+
+            // Display unrealized gain if amount invested is not zero
+            if (totalAmountInvested != 0) {
+                unrealizedGainLabel.setText(String.format("       %.5f", totalGain));
+            } else {
+                unrealizedGainLabel.setText("        N/A");
             }
 
             // Close resources
@@ -184,6 +269,7 @@ public class PortfolioManagementController {
             e.printStackTrace();
         }
     }
+
 
 
     public void loadTableData() {
@@ -229,7 +315,53 @@ public class PortfolioManagementController {
     }
 
     public void handlePortfolioButtonClick(ActionEvent event) throws IOException {
-        switchToPage(event, "PortfolioManagement.fxml", "Portfolio Management");
+        // Get the current stage and scene
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        Scene currentScene = stage.getScene();
+        Parent currentRoot = currentScene.getRoot();
+
+        // Create a StackPane to hold the current content and the ProgressIndicator
+        StackPane stackPane = new StackPane();
+        stackPane.getChildren().add(currentRoot);
+
+        // Create the ProgressIndicator and add it to the StackPane
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setMaxSize(100, 100);  // Set size if needed
+        stackPane.getChildren().add(progressIndicator);
+        StackPane.setAlignment(progressIndicator, Pos.CENTER);  // Center the ProgressIndicator
+
+        // Replace the current root with the StackPane (which includes the loading indicator)
+        currentScene.setRoot(stackPane);
+
+        // Run the loading process in a background thread using Task
+        Task<Parent> loadTask = new Task<Parent>() {
+            @Override
+            protected Parent call() throws Exception {
+                // Load the MutualFunds.fxml file (this happens in the background thread)
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("PortfolioManagement.fxml"));
+                return loader.load();
+            }
+        };
+
+        // After the loading is done, switch to the MutualFunds.fxml content
+        loadTask.setOnSucceeded(workerStateEvent -> {
+            try {
+                Parent root = loadTask.getValue();  // Get the loaded FXML root
+                currentScene.setRoot(root);  // Replace the current root with the new one
+                stage.setTitle("Portfolio Mangement");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Handle any exceptions that occur during loading
+        loadTask.setOnFailed(workerStateEvent -> {
+            Throwable exception = loadTask.getException();
+            exception.printStackTrace();  // Handle the exception (log it or show an error)
+        });
+
+        // Start the background thread to load the FXML
+        new Thread(loadTask).start();
     }
 
     public void handlesipclick(ActionEvent event) throws IOException {

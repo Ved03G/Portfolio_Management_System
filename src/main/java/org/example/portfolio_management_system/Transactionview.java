@@ -65,7 +65,53 @@ public class Transactionview {
     }
 
     public void handlePortfolioButtonClick(ActionEvent event) throws IOException {
-        switchToPage1(event, "PortfolioManagement.fxml", "Portfolio Management", btnPortfolio);
+        // Get the current stage and scene
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        Scene currentScene = stage.getScene();
+        Parent currentRoot = currentScene.getRoot();
+
+        // Create a StackPane to hold the current content and the ProgressIndicator
+        StackPane stackPane = new StackPane();
+        stackPane.getChildren().add(currentRoot);
+
+        // Create the ProgressIndicator and add it to the StackPane
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setMaxSize(100, 100);  // Set size if needed
+        stackPane.getChildren().add(progressIndicator);
+        StackPane.setAlignment(progressIndicator, Pos.CENTER);  // Center the ProgressIndicator
+
+        // Replace the current root with the StackPane (which includes the loading indicator)
+        currentScene.setRoot(stackPane);
+
+        // Run the loading process in a background thread using Task
+        Task<Parent> loadTask = new Task<Parent>() {
+            @Override
+            protected Parent call() throws Exception {
+                // Load the MutualFunds.fxml file (this happens in the background thread)
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("PortfolioManagement.fxml"));
+                return loader.load();
+            }
+        };
+
+        // After the loading is done, switch to the MutualFunds.fxml content
+        loadTask.setOnSucceeded(workerStateEvent -> {
+            try {
+                Parent root = loadTask.getValue();  // Get the loaded FXML root
+                currentScene.setRoot(root);  // Replace the current root with the new one
+                stage.setTitle("Portfolio Mangement");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Handle any exceptions that occur during loading
+        loadTask.setOnFailed(workerStateEvent -> {
+            Throwable exception = loadTask.getException();
+            exception.printStackTrace();  // Handle the exception (log it or show an error)
+        });
+
+        // Start the background thread to load the FXML
+        new Thread(loadTask).start();
     }
 
     public void handlesipclick(ActionEvent event) throws IOException {
