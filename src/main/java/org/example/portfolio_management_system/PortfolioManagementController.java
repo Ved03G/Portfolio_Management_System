@@ -285,10 +285,10 @@ public class PortfolioManagementController {
                 String schemeCode = resultSet.getString("scheme_code");
                 String schemeName = resultSet.getString("fund_name");
                 double amountInvested = resultSet.getDouble("amount_invested");
-                double currentValue = resultSet.getDouble("current_value");
                 double units = resultSet.getDouble("units");
                 String type = resultSet.getString("type");
-
+                double nav = fetchNAVFromAPI(schemeCode);
+                double currentValue = nav * units;
                 Portfolio portfolio = new Portfolio(schemeCode, schemeName, amountInvested, currentValue, units, type);
                 portfoliosList.add(portfolio);
             }

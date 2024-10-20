@@ -17,13 +17,21 @@
                   <Font name="System Bold" size="12.0" />
                </font>
                <graphic>
-                  <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Portfolio Overview">
-                     <font>
-                        <Font name="System Bold" size="20.0" />
-                     </font>
-                  </Text>
+                  <HBox spacing="6"> <!-- HBox used to place image and text side by side -->
+                     <ImageView fitHeight="31.0" fitWidth="32.0">
+                        <image>
+                           <Image url="@icons/pie-chart.png" />
+                        </image>
+                     </ImageView>
+                     <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Portfolio Overview">
+                        <font>
+                           <Font name="System Bold" size="20.0" />
+                        </font>
+                     </Text>
+                  </HBox>
                </graphic>
             </Button>
+
             <ImageView fitHeight="89.0" fitWidth="250.0" layoutX="25.0">
                <image>
                   <Image url="@icons/InvestMate (8).png" />
@@ -34,47 +42,78 @@
                   <Font name="System Bold" size="12.0" />
                </font>
                <graphic>
-                  <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="SIP Management">
-                     <font>
-                        <Font name="System Bold" size="20.0" />
-                     </font>
-                  </Text>
+                  <HBox spacing="10"> <!-- HBox used to align image and text -->
+                     <ImageView fitHeight="31.0" fitWidth="32.0">
+                        <image>
+                           <Image url="@icons/insurance.png" />
+                        </image>
+                     </ImageView>
+                     <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="SIP Management">
+                        <font>
+                           <Font name="System Bold" size="20.0" />
+                        </font>
+                     </Text>
+                  </HBox>
                </graphic>
             </Button>
+
             <Button fx:id="btnMutualFunds" layoutX="25.0" layoutY="232.0" mnemonicParsing="false" onAction="#handlemutualfundclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
                <graphic>
-                  <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Mutual Funds">
-                     <font>
-                        <Font name="System Bold" size="20.0" />
-                     </font>
-                  </Text>
+                  <HBox spacing="20"> <!-- HBox to align image and text horizontally -->
+                     <ImageView fitHeight="31.0" fitWidth="32.0">
+                        <image>
+                           <Image url="@icons/fund.png" />
+                        </image>
+                     </ImageView>
+                     <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Mutual Funds">
+                        <font>
+                           <Font name="System Bold" size="20.0" />
+                        </font>
+                     </Text>
+                  </HBox>
                </graphic>
             </Button>
-            <Button fx:id="btnReports" layoutX="25.0" layoutY="372.0" mnemonicParsing="false" onAction="#handlereportsclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+
+            <Button fx:id="btnReports" layoutX="25.0" layoutY="372.0" maxWidth="250.0" minWidth="250.0" mnemonicParsing="false" onAction="#handlereportsclick" prefHeight="47.0" prefWidth="250.0" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
                <graphic>
-                  <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Reports &amp; Analytics">
-                     <font>
-                        <Font name="System Bold" size="20.0" />
-                     </font>
-                  </Text>
+                  <HBox spacing="2"> <!-- HBox to align image and text horizontally -->
+                     <ImageView fitHeight="31.0" fitWidth="32.0">
+                        <image>
+                           <Image url="@icons/report.png" />
+                        </image>
+                     </ImageView>
+                     <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Reports &amp; Analytics">
+                        <font>
+                           <Font name="System Bold" size="20.0" />
+                        </font>
+                     </Text>
+                  </HBox>
                </graphic>
             </Button>
-            <Button fx:id="btnTransactions" layoutX="25.0" layoutY="442.0" mnemonicParsing="false" onAction="#handletransactionclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
+
+            <Button fx:id="btnTransactions" layoutX="25.0" layoutY="442.0" minWidth="250.0" mnemonicParsing="false" onAction="#handletransactionclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
                <font>
                   <Font name="System Bold" size="12.0" />
                </font>
                <graphic>
-                  <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Transaction History">
-                     <font>
-                        <Font name="System Bold" size="20.0" />
-                     </font>
-                  </Text>
+                  <HBox spacing="2"> <!-- HBox to align image and text horizontally -->
+                     <ImageView fitHeight="31.0" fitWidth="32.0">
+                        <image>
+                           <Image url="@icons/bill.png" />
+                        </image>
+                     </ImageView>
+                     <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="Transaction History">
+                        <font>
+                           <Font name="System Bold" size="20.0" />
+                        </font>
+                     </Text>
+                  </HBox>
                </graphic>
             </Button>
             <Button fx:id="btnProfile" layoutX="25.0" layoutY="512.0" mnemonicParsing="false" onAction="#handleprofileclick" style="-fx-text-fill: #A3C87F; -fx-font-size: 20px; -fx-font-family: Manrope; -fx-background-radius: 8px;" styleClass="bt1" stylesheets="@style.css">
@@ -82,43 +121,20 @@
                   <Font name="System Bold" size="12.0" />
                </font>
                <graphic>
-                  <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="User Profile">
-                     <font>
-                        <Font name="System Bold" size="20.0" />
-                     </font>
-                  </Text>
+                  <HBox layoutX="35.0" spacing="23.0"> <!-- HBox to align image and text horizontally -->
+                     <ImageView fitHeight="30.0" fitWidth="30.0">
+                        <image>
+                           <Image url="@icons/user.png" />
+                        </image>
+                     </ImageView>
+                     <Text fill="#a3c87f" strokeType="OUTSIDE" strokeWidth="0.0" text="User Profile">
+                        <font>
+                           <Font name="System Bold" size="20.0" />
+                        </font>
+                     </Text>
+                  </HBox>
                </graphic>
             </Button>
-            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="170.0">
-               <image>
-                  <Image url="@icons/pie-chart.png" />
-               </image>
-            </ImageView>
-            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="240.0">
-               <image>
-                  <Image url="@icons/fund.png" />
-               </image>
-            </ImageView>
-            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="310.0">
-               <image>
-                  <Image url="@icons/insurance.png" />
-               </image>
-            </ImageView>
-            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="380.0">
-               <image>
-                  <Image url="@icons/report.png" />
-               </image>
-            </ImageView>
-            <ImageView fitHeight="31.0" fitWidth="32.0" layoutX="25.0" layoutY="449.0">
-               <image>
-                  <Image url="@icons/bill.png" />
-               </image>
-            </ImageView>
-            <ImageView fitHeight="30.0" fitWidth="30.0" layoutX="26.0" layoutY="520.0">
-               <image>
-                  <Image url="@icons/user.png" />
-               </image>
-            </ImageView>
             <Line endX="132.0" layoutX="150.0" layoutY="220.0" startX="-131.1999969482422" stroke="#363446" />
             <Line endX="132.0" layoutX="149.0" layoutY="572.0" startX="-131.1999969482422" stroke="#363446" />
             <Line endX="132.0" layoutX="150.0" layoutY="500.0" startX="-131.1999969482422" stroke="#363446" />
