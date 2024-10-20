@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.UUID;
@@ -72,6 +73,15 @@ public class RegisterController {
 
         if (!checkPasswordMatch(password, confirmPassword)) {
             showAlert(Alert.AlertType.ERROR, "Password Mismatch", "The passwords do not match. Please re-enter the password.");
+            return;
+        }
+        if (!validateEmail(email)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Email", "Please enter a valid email address.");
+            return;
+        }
+
+        if (!validateDOB(dob)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Date of Birth", "Date of Birth must be in the past and the user must be at least 18 years old.");
             return;
         }
 
@@ -229,7 +239,23 @@ public class RegisterController {
     private boolean checkPasswordMatch(String password, String confirmPassword) {
         return password.equals(confirmPassword);
     }
+    // Method to validate email
+    private boolean validateEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        Pattern pattern = Pattern.compile(emailRegex);
+        return pattern.matcher(email).matches();
+    }
 
+    // Method to validate DOB (must be in the past and user must be at least 18 years old)
+    private boolean validateDOB(LocalDate dob) {
+        LocalDate today = LocalDate.now();
+        if (dob.isAfter(today)) {
+            return false; // DOB cannot be in the future
+        }
+        // Check if user is at least 18 years old
+        int age = Period.between(dob, today).getYears();
+        return age >= 18;
+    }
     // Method to show alerts
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);

@@ -20,6 +20,8 @@ import javafx.util.Duration;
 
 import java.net.URL;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ResourceBundle;
 
 public class UserProfileController implements Initializable {
@@ -49,6 +51,27 @@ public class UserProfileController implements Initializable {
         addHoverEffect(btnTransactions);
         addHoverEffect(btnProfile);
 
+    }
+    private boolean validatePhoneNumber(String phoneNumber) {
+        // Check if phone number is exactly 10 digits
+        return phoneNumber.matches("\\d{10}");
+    }
+
+    // Method for email validation
+    private boolean validateEmail(String email) {
+        // Simple email pattern validation
+        return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+
+    // Method to validate DOB (must be in the past and user must be at least 18 years old)
+    private boolean validateDOB(LocalDate dob) {
+        LocalDate today = LocalDate.now();
+        if (dob.isAfter(today)) {
+            return false; // DOB cannot be in the future
+        }
+        // Check if user is at least 18 years old
+        int age = Period.between(dob, today).getYears();
+        return age >= 18;
     }
     private void addHoverEffect(Button button) {
         ScaleTransition scaleIn = new ScaleTransition(Duration.millis(200), button);
@@ -98,7 +121,22 @@ public class UserProfileController implements Initializable {
     // Method to save updated profile data
     @FXML
     private void saveProfile() {
+        String phoneNumber = phoneField.getText();
+        String email = emailField.getText();
+        LocalDate dob = dobPicker.getValue();
         try {
+            // Validate phone number and email
+            if (!validatePhoneNumber(phoneNumber)) {
+                showAlert("Invalid Phone Number", "Please enter a valid 10-digit phone number.");
+                return;
+            }
+            if (!validateEmail(email)) {
+                showAlert("Invalid Email", "Please enter a valid email address.");
+                return;
+            }
+            if(!validateDOB(dob)){
+                showAlert("Invalid DOB", "Date of Birth should be greater than 18.Please enter a valid date of birth.");
+            }
             Connection connection = DatabaseConnection.getConnection();
             String updateQuery = "UPDATE users SET password = ?, phone_number = ?, address = ?, date_of_birth = ?, bank_account_number = ?, ifsc_code = ?, email = ?, pan = ? WHERE username = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
@@ -124,6 +162,15 @@ public class UserProfileController implements Initializable {
             e.printStackTrace();
         }
     }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
 
     // Edit profile method (can enable fields for editing if necessary)
     @FXML
