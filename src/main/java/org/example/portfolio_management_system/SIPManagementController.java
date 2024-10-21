@@ -18,6 +18,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -260,6 +261,8 @@ public class SIPManagementController {
         // Create a new Stage for the "Start SIP" window
         Stage sipStage = new Stage();
         sipStage.setTitle("Start New SIP");
+        Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/org/example/portfolio_management_system/icons/investment.png")));
+        sipStage.getIcons().add(icon);
 
         // Set the scene for the new stage
         Scene sipScene = new Scene(root);

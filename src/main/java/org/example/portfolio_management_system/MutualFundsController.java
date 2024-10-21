@@ -1,5 +1,8 @@
 package org.example.portfolio_management_system;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.animation.ScaleTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -13,6 +16,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -20,9 +24,16 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Objects;
 
 public class MutualFundsController {
 
@@ -230,6 +241,9 @@ public class MutualFundsController {
             // Create a new Scene and set it to the current stage
             currentStage.setScene(new Scene(newRoot));
             currentStage.show(); // Make sure to show the stage
+            currentStage.setResizable(false);
+            Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/org/example/portfolio_management_system/icons/investment.png")));
+            currentStage.getIcons().add(icon);
         } else {
             System.out.println("Current stage is null");
         }
@@ -281,6 +295,10 @@ public class MutualFundsController {
             dialog.setTitle("Investment Amount");
             dialog.setHeaderText("Enter the amount you want to invest:");
             dialog.setContentText("Amount:");
+            if (isFundClosed(selectedFund.getSchemeCode())) {
+                showAlert("Fund Closed", "This mutual fund has been closed for more than 30 days and is not buyable.");
+                return; // Exit early if the fund is closed
+            }
 
             // Get user input for investment amount
             dialog.showAndWait().ifPresent(amountStr -> {
@@ -299,6 +317,7 @@ public class MutualFundsController {
                             "You have invested Rs. " + amount + " in " + selectedFund.getSchemeName() + ".\n\n" +
                                     "You will receive " + units + " units based on the current NAV of " + currentNav + "."
                     );
+                    reloadSMFManagementScreen();
 
                     alert.showAndWait();
                 } catch (NumberFormatException e) {
@@ -308,6 +327,8 @@ public class MutualFundsController {
                     alert.setHeaderText("Invalid Input");
                     alert.setContentText("Please enter a valid number for the amount.");
                     alert.showAndWait();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
         } else {
@@ -318,6 +339,14 @@ public class MutualFundsController {
             alert.setContentText("Please select a mutual fund first.");
             alert.showAndWait();
         }
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private int getCurrentUserId() {
@@ -627,7 +656,40 @@ public class MutualFundsController {
         }
     }
 
+    // Check if the fund is closed based on its last recorded date
+    public boolean isFundClosed(String fundId) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.mfapi.in/mf/" + fundId))
+                    .build();
 
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String jsonResponse = response.body();
+
+            JsonObject jsonObject = JsonParser.parseString(jsonResponse).getAsJsonObject();
+            JsonArray dataArray = jsonObject.getAsJsonArray("data");
+
+            if (dataArray.size() > 0) {
+                JsonObject lastEntry = dataArray.get(0).getAsJsonObject();
+                String dateString = lastEntry.get("date").getAsString();  // Assuming "date" field exists
+
+                // Parse the date using the format dd-MM-yyyy
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                LocalDate lastRecordedDate = LocalDate.parse(dateString, formatter);
+
+                LocalDate currentDate = LocalDate.now();
+                long daysBetween = ChronoUnit.DAYS.between(lastRecordedDate, currentDate);
+
+                // Check if the fund has been closed for more than 30 days
+                return daysBetween > 30;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;  // Default to not closed if there's an error
+    }
 
     // Method to load the FXML of each section
     private void switchToPage(ActionEvent event, String fxmlFile, String title, Button clickedButton) throws IOException {

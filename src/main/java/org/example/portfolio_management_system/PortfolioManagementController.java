@@ -143,52 +143,6 @@ public class PortfolioManagementController {
             e.printStackTrace();
         }
     }
-//    private double fetchNAVFromAPI(String schemeCode) {
-//        double nav = 0;
-//        try {
-//            // API endpoint with the schemeCode
-//            String apiUrl = "https://api.mfapi.in/mf/" + schemeCode;
-//
-//            // Create a connection to the API
-//            URL url = new URL(apiUrl);
-//            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-//            connection.setRequestMethod("GET");
-//
-//            // Request GZIP compressed content
-//            connection.setRequestProperty("Accept-Encoding", "gzip");
-//
-//            // Check if the response is GZIP compressed
-//            InputStream inputStream;
-//            if ("gzip".equalsIgnoreCase(connection.getContentEncoding())) {
-//                inputStream = new GZIPInputStream(connection.getInputStream());
-//            } else {
-//                inputStream = connection.getInputStream();
-//            }
-//
-//            // Use a buffered reader with a 16KB buffer
-//            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream), 32 * 1024);
-//            String inputLine;
-//            StringBuilder content = new StringBuilder();
-//
-//            while ((inputLine = in.readLine()) != null) {
-//                content.append(inputLine);
-//            }
-//
-//            // Close the connections
-//            in.close();
-//            connection.disconnect();
-//
-//            // Parse the JSON response to get the NAV value
-//            JSONObject jsonResponse = new JSONObject(content.toString());
-//            nav = jsonResponse.getJSONArray("data").getJSONObject(0).getDouble("nav"); // Assuming 'nav' is the field
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        return nav;
-//    }
-
 
     public void calculateGains(int user_id) {
         double totalGain = 0.0;

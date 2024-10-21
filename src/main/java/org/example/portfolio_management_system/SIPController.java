@@ -16,6 +16,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import org.example.portfolio_management_system.DatabaseConnection;
@@ -37,6 +38,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 
 
@@ -445,7 +447,11 @@ private String fetchNAVForFund(String fundId) {
         if (currentStage != null) {
             // Create a new Scene and set it to the current stage
             currentStage.setScene(new Scene(newRoot));
-            currentStage.show(); // Make sure to show the stage
+            currentStage.show();
+            currentStage.setResizable(false);
+            Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/org/example/portfolio_management_system/icons/investment.png")));
+            currentStage.getIcons().add(icon);// Make sure to show the stage
+
         } else {
             System.out.println("Current stage is null");
         }
