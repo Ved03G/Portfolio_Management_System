@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.control.cell.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
 
-<AnchorPane maxHeight="700.0" maxWidth="1100.0" minHeight="700.0" minWidth="1100.0" prefHeight="700.0" prefWidth="1100.0" style="-fx-background-color: #F6F6F6;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.PortfolioManagementController">
+<AnchorPane maxHeight="700.0" maxWidth="1100.0" minHeight="700.0" minWidth="1100.0" prefHeight="700.0" prefWidth="1100.0" style="-fx-background-color: #F6F6F6;" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.portfolio_management_system.PortfolioManagementController">
    <children>
       <Pane prefHeight="200.0" prefWidth="200.0" styleClass="container22" stylesheets="@style.css">
          <children>
@@ -161,9 +168,9 @@
       <Pane layoutX="320.0" layoutY="122.0" prefHeight="175.0" prefWidth="460.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 8px;">
          <children>
             <Text layoutX="254.0" layoutY="84.0" strokeType="OUTSIDE" strokeWidth="0.0" text="CURRENT VALUE" />
-            <TextArea fx:id="currentValueTextArea" layoutX="254.0" layoutY="104.0" prefHeight="37.0" prefWidth="151.0" style="-fx-background-color: transparent;" styleClass="text-area3" stylesheets="@style.css" />
+            <Label fx:id="currentValueTextArea" layoutX="254.0" layoutY="104.0" prefHeight="37.0" prefWidth="151.0" style="-fx-background-color: transparent;-fx-font-size: 20px;-fx-text-fill:green;" />
             <Text layoutX="14.0" layoutY="81.0" strokeType="OUTSIDE" strokeWidth="0.0" text="AMOUNT INVESTED" />
-            <TextArea fx:id="amountInvestedTextArea" layoutX="14.0" layoutY="103.0" prefHeight="37.0" prefWidth="151.0" style="-fx-background-color: transparent;" styleClass="text-area3" stylesheets="@style.css" />
+            <Label fx:id="amountInvestedTextArea" layoutX="14.0" layoutY="103.0" prefHeight="37.0" prefWidth="151.0" style="-fx-background-color: transparent;-fx-font-size: 20px; -fx-text-fill:green;" />
             <Label layoutX="11.0" layoutY="16.0" prefHeight="30.0" prefWidth="77.0" style="-fx-background-color: #3D3B50; -fx-text-fill: #FFFFFF; -fx-font-size: 18px; -fx-background-radius: 6px;" text=" Portfolio" textFill="WHITE" />
             <ImageView fitHeight="60.0" fitWidth="77.0" layoutX="384.0" layoutY="1.0" nodeOrientation="RIGHT_TO_LEFT">
                <image>
@@ -183,7 +190,7 @@
                </font>
             </Text>
             <Line endX="49.5999755859375" layoutX="143.0" layoutY="100.0" startX="-131.1999969482422" stroke="#e0e0e0" />
-            <ImageView fitHeight="21.0" fitWidth="23.0" layoutX="44.0" layoutY="126.0">
+            <ImageView fitHeight="18.0" fitWidth="18.0" layoutX="47.0" layoutY="128.0">
                <image>
                   <Image url="@icons/rupee-indian.png" />
                </image>

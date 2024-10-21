@@ -48,9 +48,9 @@ public class PortfolioManagementController {
     @FXML
     private TableColumn<MutualFund2, Double> unitsColumn;
     @FXML
-    private TextArea amountInvestedTextArea;
+    private Label amountInvestedTextArea;
     @FXML
-    private TextArea currentValueTextArea;
+    private Label currentValueTextArea;
     @FXML
     private Label totalGainLabel;
     @FXML
@@ -109,48 +109,30 @@ public class PortfolioManagementController {
         try {
             Connection connection = getConnection();
 
-            // SQL query to fetch scheme_code, amount_invested, and units for the user
-            String query = "SELECT scheme_code, SUM(amount_invested) as totalamount, SUM(units) as totalunits FROM portfolio WHERE user_id = ? GROUP BY scheme_code";
+            // SQL query to sum the amount_invested and current_value for the particular user
+            String query = "SELECT SUM(amount_invested) as totalamount, SUM(current_value) as currenttotal FROM portfolio WHERE user_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, userId);
-
-            // Execute the query and fetch the result
+            calculateGains(userId);
+            // Execute the query and fetch the summed results
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            double totalAmountInvested = 0;
-            double totalCurrentValue = 0;
-
-            // Iterate through the result set and fetch current value from API for each scheme
-            while (resultSet.next()) {
-                String schemeCode = resultSet.getString("scheme_code");
+            if (resultSet.next()) {
                 double amountInvested = resultSet.getDouble("totalamount");
-                double totalUnits = resultSet.getDouble("totalunits");
+                double currentValue = resultSet.getDouble("currenttotal");
 
-                // Fetch the current NAV from the API using the schemeCode
-                double currentNAV = fetchNAVFromAPI(schemeCode);
+                // Formatting the amounts to 4 decimal places
+                String formattedAmountInvested = String.format("%.4f", amountInvested);
+                String formattedCurrentValue = String.format("%.4f", currentValue);
 
-                // Calculate the current value for this scheme
-                double currentValue = totalUnits * currentNAV;
+                // Convert the formatted strings back to double (if required)
+                double roundedCurrentValue = Double.parseDouble(formattedCurrentValue);
+                double roundedAmountInvested = Double.parseDouble(formattedAmountInvested);
 
-                // Sum up the total invested and current values
-                totalAmountInvested += amountInvested;
-                totalCurrentValue += currentValue;
+                // Set the values to the respective text areas
+                amountInvestedTextArea.setText(String.valueOf(roundedAmountInvested));
+                currentValueTextArea.setText(String.valueOf(roundedCurrentValue));
             }
-
-            // Formatting the amounts to 4 decimal places
-            String formattedAmountInvested = String.format("%.4f", totalAmountInvested);
-            String formattedCurrentValue = String.format("%.4f", totalCurrentValue);
-
-            // Convert the formatted strings back to double (if required)
-            double roundedCurrentValue = Double.parseDouble(formattedCurrentValue);
-            double roundedAmountInvested = Double.parseDouble(formattedAmountInvested);
-
-            // Set the values to the respective text areas
-            amountInvestedTextArea.setText(String.valueOf(roundedAmountInvested));
-            currentValueTextArea.setText(String.valueOf(roundedCurrentValue));
-
-            // Calculate gains (call the method to display gains)
-            calculateGains(userId);
 
             // Close the resources
             resultSet.close();
@@ -161,103 +143,88 @@ public class PortfolioManagementController {
             e.printStackTrace();
         }
     }
-    private double fetchNAVFromAPI(String schemeCode) {
-        double nav = 0;
-        try {
-            // API endpoint with the schemeCode
-            String apiUrl = "https://api.mfapi.in/mf/" + schemeCode;
+//    private double fetchNAVFromAPI(String schemeCode) {
+//        double nav = 0;
+//        try {
+//            // API endpoint with the schemeCode
+//            String apiUrl = "https://api.mfapi.in/mf/" + schemeCode;
+//
+//            // Create a connection to the API
+//            URL url = new URL(apiUrl);
+//            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+//            connection.setRequestMethod("GET");
+//
+//            // Request GZIP compressed content
+//            connection.setRequestProperty("Accept-Encoding", "gzip");
+//
+//            // Check if the response is GZIP compressed
+//            InputStream inputStream;
+//            if ("gzip".equalsIgnoreCase(connection.getContentEncoding())) {
+//                inputStream = new GZIPInputStream(connection.getInputStream());
+//            } else {
+//                inputStream = connection.getInputStream();
+//            }
+//
+//            // Use a buffered reader with a 16KB buffer
+//            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream), 32 * 1024);
+//            String inputLine;
+//            StringBuilder content = new StringBuilder();
+//
+//            while ((inputLine = in.readLine()) != null) {
+//                content.append(inputLine);
+//            }
+//
+//            // Close the connections
+//            in.close();
+//            connection.disconnect();
+//
+//            // Parse the JSON response to get the NAV value
+//            JSONObject jsonResponse = new JSONObject(content.toString());
+//            nav = jsonResponse.getJSONArray("data").getJSONObject(0).getDouble("nav"); // Assuming 'nav' is the field
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return nav;
+//    }
 
-            // Create a connection to the API
-            URL url = new URL(apiUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
 
-            // Request GZIP compressed content
-            connection.setRequestProperty("Accept-Encoding", "gzip");
-
-            // Check if the response is GZIP compressed
-            InputStream inputStream;
-            if ("gzip".equalsIgnoreCase(connection.getContentEncoding())) {
-                inputStream = new GZIPInputStream(connection.getInputStream());
-            } else {
-                inputStream = connection.getInputStream();
-            }
-
-            // Use a buffered reader with a 16KB buffer
-            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream), 16 * 1024);
-            String inputLine;
-            StringBuilder content = new StringBuilder();
-
-            while ((inputLine = in.readLine()) != null) {
-                content.append(inputLine);
-            }
-
-            // Close the connections
-            in.close();
-            connection.disconnect();
-
-            // Parse the JSON response to get the NAV value
-            JSONObject jsonResponse = new JSONObject(content.toString());
-            nav = jsonResponse.getJSONArray("data").getJSONObject(0).getDouble("nav"); // Assuming 'nav' is the field
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return nav;
-    }
-
-
-    public void calculateGains(int userId) {
+    public void calculateGains(int user_id) {
         double totalGain = 0.0;
         double totalAmountInvested = 0.0;
-        double totalCurrentValue = 0.0;
 
         try {
             Connection connection = getConnection();
 
-            // SQL query to fetch scheme_code, amount_invested, and units for the user
-            String query = "SELECT scheme_code, SUM(amount_invested) as totalamount, SUM(units) as totalunits " +
-                    "FROM portfolio WHERE user_id = ? GROUP BY scheme_code";
+            // Query to sum the total amount invested and current value for the user
+            String query = "SELECT SUM(amount_invested) AS totalAmountInvested, SUM(current_value) AS totalCurrentValue " +
+                    "FROM portfolio WHERE user_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, userId);
-
-            // Execute the query and fetch the result
+            preparedStatement.setInt(1, user_id);
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            // Loop through all rows to fetch the current NAV from the API for each scheme_code
-            while (resultSet.next()) {
-                String schemeCode = resultSet.getString("scheme_code");
-                double amountInvested = resultSet.getDouble("totalamount");
-                double totalUnits = resultSet.getDouble("totalunits");
+            if (resultSet.next()) {
+                totalAmountInvested = resultSet.getDouble("totalAmountInvested");
+                double totalCurrentValue = resultSet.getDouble("totalCurrentValue");
 
-                // Fetch the current NAV from the API for this scheme_code
-                double currentNAV = fetchNAVFromAPI(schemeCode);
+                // Calculate total gain
+                totalGain = totalCurrentValue - totalAmountInvested;
 
-                // Calculate the current value for this investment
-                double currentValue = totalUnits * currentNAV;
+                // Calculate gain percentage if amount invested is not zero
+                if (totalAmountInvested != 0) {
+                    double totalGainPercentage = (totalGain / totalAmountInvested) * 100;
+                    totalGainLabel.setText(String.format("       %.5f%%", totalGainPercentage));
+                } else {
+                    totalGainLabel.setText("         N/A");
+                }
 
-                // Add to the total amount invested and total current value
-                totalAmountInvested += amountInvested;
-                totalCurrentValue += currentValue;
-            }
-
-            // Calculate total gain
-            totalGain = totalCurrentValue - totalAmountInvested;
-
-            // Update the gain percentage if the amount invested is not zero
-            if (totalAmountInvested != 0) {
-                double totalGainPercentage = (totalGain / totalAmountInvested) * 100;
-                totalGainLabel.setText(String.format("       %.5f%%", totalGainPercentage));
-            } else {
-                totalGainLabel.setText("         N/A");
-            }
-
-            // Display unrealized gain if amount invested is not zero
-            if (totalAmountInvested != 0) {
-                unrealizedGainLabel.setText(String.format("       %.5f", totalGain));
-            } else {
-                unrealizedGainLabel.setText("        N/A");
+                // Display unrealized gain
+                if (totalAmountInvested != 0) {
+                    unrealizedGainLabel.setText(String.format("       %.5f", totalGain));
+                } else {
+                    unrealizedGainLabel.setText("        N/A");
+                }
             }
 
             // Close resources
@@ -287,8 +254,8 @@ public class PortfolioManagementController {
                 double amountInvested = resultSet.getDouble("amount_invested");
                 double units = resultSet.getDouble("units");
                 String type = resultSet.getString("type");
-                double nav = fetchNAVFromAPI(schemeCode);
-                double currentValue = nav * units;
+//                double nav = fetchNAVFromAPI(schemeCode);
+                double currentValue = resultSet.getDouble("current_value");
                 Portfolio portfolio = new Portfolio(schemeCode, schemeName, amountInvested, currentValue, units, type);
                 portfoliosList.add(portfolio);
             }

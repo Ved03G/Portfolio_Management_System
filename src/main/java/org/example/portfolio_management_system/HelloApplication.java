@@ -17,6 +17,7 @@ public class HelloApplication extends Application {
         stage.setTitle("InvestMATE!");
         stage.getIcons().add(icon);
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
     }
 

@@ -37,7 +37,7 @@ public class UserProfileController implements Initializable {
     @FXML
     private DatePicker dobPicker;
     @FXML
-    private Button btnPortfolio, btnSIP, btnMutualFunds, btnReports, btnTransactions, btnProfile;
+    private Button btnPortfolio, btnSIP, btnMutualFunds, btnReports, btnTransactions, btnProfile,edit,save,logout;
 
 
     @Override
@@ -50,6 +50,9 @@ public class UserProfileController implements Initializable {
         addHoverEffect(btnReports);
         addHoverEffect(btnTransactions);
         addHoverEffect(btnProfile);
+        addHoverEffect(edit);
+        addHoverEffect(save);
+        addHoverEffect(logout);
 
     }
     private boolean validatePhoneNumber(String phoneNumber) {
